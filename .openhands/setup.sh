@@ -95,8 +95,8 @@ setup_docker_env() {
   fi
 
   # Build Docker image
-  echo "Building Docker image..."
-  docker-compose build
+  # echo "Building Docker image..."
+  # docker-compose build
 
   # Run tests in Docker to verify setup
   #echo "Running tests in Docker to verify setup..."
