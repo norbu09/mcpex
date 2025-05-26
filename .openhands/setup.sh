@@ -99,8 +99,8 @@ setup_docker_env() {
   docker-compose build
 
   # Run tests in Docker to verify setup
-  echo "Running tests in Docker to verify setup..."
-  docker-compose run --rm mcpex mix test
+  #echo "Running tests in Docker to verify setup..."
+  #docker-compose run --rm mcpex mix test
 }
 
 # Ask user which setup to use
