@@ -51,16 +51,21 @@ defmodule Mcpex.RateLimiter.ServerTest do
         name: unique_name
       ]
       
-      # start_supervised!/2 will raise if the process fails to start.
-      # We need to check the supervisor's child termination reason or use a monitor.
-      try do
-        {:error, reason} = Server.start_link(opts) # Not using start_supervised here for finer control
-        assert reason == {:failed_to_initialize_strategy, :init_failed}
-      catch
-        :exit, {:failed_to_initialize_strategy, :init_failed} ->
-          # This is also an acceptable error format when the process exits
-          assert true
-      end
+      # We expect this to fail with an exit signal
+      # Use Process.flag to convert exit signals to messages for this test
+      Process.flag(:trap_exit, true)
+      
+      # Start the server in a separate process so we can monitor it
+      pid = spawn_link(fn -> Server.start_link(opts) end)
+      
+      # Wait for the exit message
+      assert_receive {:EXIT, ^pid, reason}, 1000
+      
+      # Verify the error reason
+      assert reason == {:failed_to_initialize_strategy, :init_failed}
+      
+      # Reset the trap_exit flag
+      Process.flag(:trap_exit, false)
     end
   end
 
