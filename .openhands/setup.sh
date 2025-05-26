@@ -113,7 +113,7 @@ fi
 echo "Setup complete! Your MCPEX development environment is ready."
 echo ""
 echo "To start the application:"
-if [ "$DOCKER_AVAILABLE" = true ] && [ "$choice" = "1" ]; then
+if [ "$DOCKER_AVAILABLE" = true ]; then
   echo "  - With Docker: docker-compose up"
   echo "  - To run tests: docker-compose run --rm mcpex mix test"
   echo "  - To get a shell: docker-compose run --rm mcpex bash"
