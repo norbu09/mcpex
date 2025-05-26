@@ -22,9 +22,6 @@ defmodule Mcpex.MixProject do
   # Run "mix help deps" to learn about dependencies.
     defp deps do
     [
-      # JSON handling
-      {:jason, "~> 1.4"},
-
       # Schema validation
       {:ex_json_schema, "~> 0.10"},
 

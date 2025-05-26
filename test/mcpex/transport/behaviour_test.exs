@@ -26,7 +26,7 @@ defmodule Mcpex.Transport.BehaviourTest do
       assert is_binary(json)
 
       # Verify it can be parsed back
-      assert {:ok, parsed} = Jason.decode(json)
+      assert {:ok, parsed} = JSON.decode(json)
       assert parsed["jsonrpc"] == "2.0"
       assert parsed["method"] == "test"
       assert parsed["id"] == "1"
@@ -90,7 +90,7 @@ defmodule Mcpex.Transport.BehaviourTest do
       assert conn.state == :sent
       assert Plug.Conn.get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
 
-      {:ok, parsed} = Jason.decode(conn.resp_body)
+      {:ok, parsed} = JSON.decode(conn.resp_body)
       assert parsed["message"] == "test"
     end
 

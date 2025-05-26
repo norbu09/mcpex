@@ -36,7 +36,7 @@ defmodule Mcpex.Transport.SSETest do
 
   describe "POST requests" do
     test "handles valid initialize request" do
-      body = Jason.encode!(%{
+      body = JSON.encode!(%{
         jsonrpc: "2.0",
         method: "initialize",
         params: %{
@@ -58,7 +58,7 @@ defmodule Mcpex.Transport.SSETest do
       assert conn.status == 200
       assert Plug.Conn.get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
 
-      {:ok, response} = Jason.decode(conn.resp_body)
+      {:ok, response} = JSON.decode(conn.resp_body)
       IO.inspect(response, label: "DEBUG - Initialize Response")
       assert response["jsonrpc"] == "2.0"
       assert response["result"]["protocolVersion"] == "2024-11-05"
@@ -66,7 +66,7 @@ defmodule Mcpex.Transport.SSETest do
     end
 
     test "handles notification without response" do
-      body = Jason.encode!(%{
+      body = JSON.encode!(%{
         jsonrpc: "2.0",
         method: "initialized"
       })
@@ -84,7 +84,7 @@ defmodule Mcpex.Transport.SSETest do
     end
 
     test "rejects invalid origin" do
-      body = Jason.encode!(%{
+      body = JSON.encode!(%{
         jsonrpc: "2.0",
         method: "test",
         id: "1"
@@ -112,12 +112,12 @@ defmodule Mcpex.Transport.SSETest do
 
       assert conn.status == 400
 
-      {:ok, response} = Jason.decode(conn.resp_body)
+      {:ok, response} = JSON.decode(conn.resp_body)
       assert response["error"]["code"] == -32700  # Parse error
     end
 
     test "handles method not found" do
-      body = Jason.encode!(%{
+      body = JSON.encode!(%{
         jsonrpc: "2.0",
         method: "unknown_method",
         id: "1"
@@ -133,7 +133,7 @@ defmodule Mcpex.Transport.SSETest do
 
       assert conn.status == 200
 
-      {:ok, response} = Jason.decode(conn.resp_body)
+      {:ok, response} = JSON.decode(conn.resp_body)
       assert response["error"]["code"] == -32601  # Method not found
       assert response["id"] == "1"
     end
@@ -143,7 +143,7 @@ defmodule Mcpex.Transport.SSETest do
         {:ok, %{custom: "response"}}
       end
 
-      body = Jason.encode!(%{
+      body = JSON.encode!(%{
         jsonrpc: "2.0",
         method: "custom_method",
         id: "1"
@@ -159,7 +159,7 @@ defmodule Mcpex.Transport.SSETest do
 
       assert conn.status == 200
 
-      {:ok, response} = Jason.decode(conn.resp_body)
+      {:ok, response} = JSON.decode(conn.resp_body)
       assert response["result"]["custom"] == "response"
       assert response["id"] == "1"
     end
@@ -227,7 +227,7 @@ defmodule Mcpex.Transport.SSETest do
         }
       ]
 
-      body = Jason.encode!(batch)
+      body = JSON.encode!(batch)
 
       conn =
         json_post_conn("/mcp/sse", body)
@@ -239,7 +239,7 @@ defmodule Mcpex.Transport.SSETest do
 
       assert conn.status == 200
 
-      {:ok, responses} = Jason.decode(conn.resp_body)
+      {:ok, responses} = JSON.decode(conn.resp_body)
       assert is_list(responses)
       assert length(responses) == 1  # Only the request should have a response
       assert hd(responses)["id"] == "1"
