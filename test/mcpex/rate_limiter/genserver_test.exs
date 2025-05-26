@@ -40,16 +40,21 @@ defmodule Mcpex.RateLimiter.ServerTest do
         def check_and_update_limit(_state, _id, _rule), do: {:ok, :some_state, %{}}
       end
 
+      # Use a unique name for this test to avoid conflicts
+      unique_name = :"FailingStrategyServer_#{System.unique_integer([:positive])}"
+      
       # Disable ETS table creation for this failing strategy test
-      opts = [strategy_module: FailingStrategy, table_name: nil, rules: []]
+      opts = [
+        strategy_module: FailingStrategy, 
+        table_name: nil, 
+        rules: [],
+        name: unique_name
+      ]
       
       # start_supervised!/2 will raise if the process fails to start.
       # We need to check the supervisor's child termination reason or use a monitor.
-      # For simplicity, we'll check if the process is alive after attempting to start.
-      # A more robust test would monitor the process.
       {:error, reason} = Server.start_link(opts) # Not using start_supervised here for finer control
-      assert reason == {:shutdown, {:failed_to_start_child, nil, {:failed_to_initialize_strategy, :init_failed}}} 
-      # or just assert it's not an :ok tuple
+      assert reason == {:shutdown, {:failed_to_initialize_strategy, :init_failed}}
     end
   end
 
