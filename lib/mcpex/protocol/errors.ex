@@ -9,20 +9,29 @@ defmodule Mcpex.Protocol.Errors do
   @doc """
   Standard JSON-RPC 2.0 error codes.
   """
-  @spec parse_error() :: integer()
-  def parse_error, do: -32700
+  @spec parse_error() :: {integer(), String.t(), nil}
+  def parse_error, do: {-32700, "Parse error", nil}
 
-  @spec invalid_request() :: integer()
-  def invalid_request, do: -32600
+  @spec invalid_request() :: {integer(), String.t(), nil}
+  def invalid_request, do: {-32600, "Invalid Request", nil}
 
-  @spec method_not_found() :: integer()
-  def method_not_found, do: -32601
+  @spec method_not_found() :: {integer(), String.t(), nil}
+  def method_not_found, do: {-32601, "Method not found", nil}
+  
+  @spec server_not_initialized() :: {integer(), String.t(), nil}
+  def server_not_initialized, do: {-32002, "Server not initialized", nil}
 
-  @spec invalid_params() :: integer()
-  def invalid_params, do: -32602
+  @spec invalid_params() :: {integer(), String.t(), nil}
+  def invalid_params, do: {-32602, "Invalid params", nil}
+  
+  @spec invalid_params(String.t()) :: {integer(), String.t(), nil}
+  def invalid_params(message), do: {-32602, message, nil}
 
-  @spec internal_error() :: integer()
-  def internal_error, do: -32603
+  @spec internal_error() :: {integer(), String.t(), nil}
+  def internal_error, do: {-32603, "Internal error", nil}
+  
+  @spec internal_error(String.t()) :: {integer(), String.t(), nil}
+  def internal_error(message), do: {-32603, message, nil}
 
   @doc """
   Get the standard error message for a JSON-RPC error code.
@@ -42,23 +51,23 @@ defmodule Mcpex.Protocol.Errors do
   def create_error(code, message \\ nil, data \\ nil)
 
   def create_error(:parse_error, message, data) do
-    {parse_error(), message || error_message(parse_error()), data}
+    {-32700, message || "Parse error", data}
   end
 
   def create_error(:invalid_request, message, data) do
-    {invalid_request(), message || error_message(invalid_request()), data}
+    {-32600, message || "Invalid Request", data}
   end
 
   def create_error(:method_not_found, message, data) do
-    {method_not_found(), message || error_message(method_not_found()), data}
+    {-32601, message || "Method not found", data}
   end
 
   def create_error(:invalid_params, message, data) do
-    {invalid_params(), message || error_message(invalid_params()), data}
+    {-32602, message || "Invalid params", data}
   end
 
   def create_error(:internal_error, message, data) do
-    {internal_error(), message || error_message(internal_error()), data}
+    {-32603, message || "Internal error", data}
   end
 
   def create_error(code, message, data) when is_integer(code) do
@@ -88,13 +97,13 @@ defmodule Mcpex.Protocol.Errors do
   Converts various error formats to a standardized error tuple.
   """
   @spec normalize_error(any()) :: {integer(), String.t(), any()}
-  def normalize_error({:parse_error, message}), do: {parse_error(), message, nil}
-  def normalize_error({:invalid_request, message}), do: {invalid_request(), message, nil}
-  def normalize_error({:method_not_found, message}), do: {method_not_found(), message, nil}
-  def normalize_error({:invalid_params, message}), do: {invalid_params(), message, nil}
-  def normalize_error({:internal_error, message}), do: {internal_error(), message, nil}
+  def normalize_error({:parse_error, message}), do: {-32700, message, nil}
+  def normalize_error({:invalid_request, message}), do: {-32600, message, nil}
+  def normalize_error({:method_not_found, message}), do: {-32601, message, nil}
+  def normalize_error({:invalid_params, message}), do: {-32602, message, nil}
+  def normalize_error({:internal_error, message}), do: {-32603, message, nil}
   def normalize_error({code, message, data}) when is_integer(code), do: {code, message, data}
   def normalize_error({code, message}) when is_integer(code), do: {code, message, nil}
-  def normalize_error(message) when is_binary(message), do: create_error(:internal_error, message, nil)
-  def normalize_error(_), do: create_error(:internal_error, "Unknown error", nil)
+  def normalize_error(message) when is_binary(message), do: {-32603, message, nil}
+  def normalize_error(_), do: {-32603, "Unknown error", nil}
 end
