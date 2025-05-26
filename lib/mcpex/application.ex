@@ -49,10 +49,12 @@ defmodule Mcpex.Application do
 
     # Define the child spec for the RateLimiterServer
     rate_limiter_child_spec = {RateLimiterServer, rate_limiter_opts}
-
     children = [
       # MCP Session Store Server for cleanup and ETS table management
       {Mcpex.Session.StoreServer, [table: :mcpex_sessions]},
+
+      # Central registry for MCP feature registration
+      {Registry, keys: :unique, name: Mcpex.Registry},
 
       # Add RateLimiterServer to the supervision tree
       rate_limiter_child_spec,

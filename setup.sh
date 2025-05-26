@@ -2,6 +2,8 @@
 set -e
 
 echo "Setting up MCPEX development environment..."
+apt-get update
+apt-get install -y docker.io
 
 # Check if Docker is installed
 if command -v docker >/dev/null 2>&1; then
@@ -125,4 +127,3 @@ echo "  - make run         # Run the application"
 echo "  - make test        # Run tests"
 echo "  - make docker-run  # Run with Docker"
 echo "  - make help        # Show all available commands"
-
