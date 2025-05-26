@@ -1,22 +1,22 @@
-FROM elixir:1.18.3-otp-27-slim
+FROM elixir:1.18.4-otp-27-slim
 
 WORKDIR /app
 
 # Install build dependencies
 RUN apt-get update && \
-    apt-get install -y build-essential git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+  apt-get install -y build-essential git && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
 
 # Install Hex and Rebar
 RUN mix local.hex --force && \
-    mix local.rebar --force
+  mix local.rebar --force
 
 # Copy mix files
 COPY mix.exs mix.lock ./
 
 # Copy dependencies files
-COPY config ./config
+# COPY config ./config
 
 # Get dependencies
 RUN mix deps.get
