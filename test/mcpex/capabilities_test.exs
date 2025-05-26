@@ -1,16 +1,199 @@
 defmodule Mcpex.CapabilitiesTest do
   use ExUnit.Case
   
-  alias Mcpex.DemoData
-  
   setup do
-    # Start the registry
-    {:ok, _} = Registry.start_link(keys: :unique, name: Mcpex.Registry)
+    # Clean up any existing registry entries
+    cleanup_registry()
     
-    # Register demo data
-    DemoData.register_all()
+    # Register test data directly
+    register_test_data()
     
     :ok
+  end
+  
+  # Helper to clean up registry entries before each test
+  defp cleanup_registry do
+    # Get all keys in the registry
+    keys = Registry.select(Mcpex.Registry, [{{:"$1", :_, :_}, [], [:"$1"]}])
+    
+    # Unregister each key
+    Enum.each(keys, fn key ->
+      Registry.unregister(Mcpex.Registry, key)
+    end)
+  end
+  
+  # Register test data for capabilities tests
+  defp register_test_data do
+    # Register tools
+    Mcpex.Registry.register(:tools_registry, nil, %{
+      tools: [
+        %{
+          "name" => "calculator",
+          "description" => "A simple calculator tool",
+          "argumentSchema" => %{
+            "type" => "object",
+            "properties" => %{
+              "expression" => %{
+                "type" => "string",
+                "description" => "The mathematical expression to evaluate"
+              }
+            },
+            "required" => ["expression"]
+          }
+        },
+        %{
+          "name" => "weather",
+          "description" => "Get weather information for a location",
+          "argumentSchema" => %{
+            "type" => "object",
+            "properties" => %{
+              "location" => %{
+                "type" => "string",
+                "description" => "The location to get weather for"
+              }
+            },
+            "required" => ["location"]
+          }
+        }
+      ]
+    })
+    
+    # Register tool executors
+    Mcpex.Registry.register(:tool_executors, nil, %{
+      executors: %{
+        "calculator" => fn arguments ->
+          expression = Map.get(arguments, "expression", "")
+          execution_id = "exec-#{:erlang.system_time(:millisecond)}"
+          
+          # This is a simplified example - in a real implementation, you would
+          # validate the expression and use a proper parser/evaluator
+          result = case Code.string_to_quoted(expression) do
+            {:ok, ast} ->
+              try do
+                {result, _} = Code.eval_quoted(ast)
+                "#{result}"
+              rescue
+                _ -> "Error evaluating expression"
+              end
+            
+            {:error, _} ->
+              "Invalid expression"
+          end
+          
+          {:ok, %{
+            "executionId" => execution_id,
+            "content" => [%{
+              "type" => "text",
+              "text" => "Result: #{result}"
+            }]
+          }}
+        end,
+        
+        "weather" => fn arguments ->
+          location = Map.get(arguments, "location", "")
+          execution_id = "exec-#{:erlang.system_time(:millisecond)}"
+          
+          # In a real implementation, you would call a weather API
+          {:ok, %{
+            "executionId" => execution_id,
+            "content" => [%{
+              "type" => "text",
+              "text" => "Weather for #{location}: Sunny, 25°C"
+            }]
+          }}
+        end
+      }
+    })
+    
+    # Register prompts
+    Mcpex.Registry.register(:prompts_registry, nil, %{
+      prompts: [
+        %{
+          "name" => "greeting",
+          "description" => "A simple greeting prompt",
+          "argumentSchema" => %{
+            "type" => "object",
+            "properties" => %{
+              "name" => %{
+                "type" => "string",
+                "description" => "The name to greet"
+              }
+            }
+          }
+        },
+        %{
+          "name" => "summary",
+          "description" => "A prompt to summarize text",
+          "argumentSchema" => %{
+            "type" => "object",
+            "properties" => %{
+              "text" => %{
+                "type" => "string",
+                "description" => "The text to summarize"
+              },
+              "length" => %{
+                "type" => "integer",
+                "description" => "The desired summary length in words"
+              }
+            },
+            "required" => ["text"]
+          }
+        }
+      ]
+    })
+    
+    # Register individual prompts
+    Mcpex.Registry.register({:prompt, "greeting"}, nil, %{
+      "name" => "greeting",
+      "description" => "A simple greeting prompt",
+      "template" => "Hello, {{name}}!",
+      "argumentSchema" => %{
+        "type" => "object",
+        "properties" => %{
+          "name" => %{
+            "type" => "string",
+            "description" => "The name to greet"
+          }
+        }
+      }
+    })
+    
+    Mcpex.Registry.register({:prompt, "summary"}, nil, %{
+      "name" => "summary",
+      "description" => "A prompt to summarize text",
+      "template" => "Please summarize the following text in {{length}} words or less:\n\n{{text}}",
+      "argumentSchema" => %{
+        "type" => "object",
+        "properties" => %{
+          "text" => %{
+            "type" => "string",
+            "description" => "The text to summarize"
+          },
+          "length" => %{
+            "type" => "integer",
+            "description" => "The desired summary length in words"
+          }
+        },
+        "required" => ["text"]
+      }
+    })
+    
+    # Register resources
+    Mcpex.Registry.register(:resources_registry, nil, %{
+      resources: [
+        %{"uri" => "file://example.txt", "name" => "Example File", "mimeType" => "text/plain"},
+        %{"uri" => "file://example.json", "name" => "Example JSON", "mimeType" => "application/json"}
+      ]
+    })
+    
+    # Register resource contents
+    Mcpex.Registry.register({:resource_content, "file://example.txt"}, nil, %{
+      content: "This is an example text file."
+    })
+    
+    Mcpex.Registry.register({:resource_content, "file://example.json"}, nil, %{
+      content: ~s({"example": "This is an example JSON file."})
+    })
   end
   
   describe "Tools capability" do

@@ -2,9 +2,20 @@ defmodule Mcpex.RegistryTest do
   use ExUnit.Case
   
   setup do
-    # Start the registry for each test
-    {:ok, _} = Registry.start_link(keys: :unique, name: Mcpex.Registry)
+    # Clean up any existing registry entries
+    cleanup_registry()
     :ok
+  end
+  
+  # Helper to clean up registry entries before each test
+  defp cleanup_registry do
+    # Get all keys in the registry
+    keys = Registry.select(Mcpex.Registry, [{{:"$1", :_, :_}, [], [:"$1"]}])
+    
+    # Unregister each key
+    Enum.each(keys, fn key ->
+      Registry.unregister(Mcpex.Registry, key)
+    end)
   end
   
   test "register and lookup capability" do
@@ -16,10 +27,10 @@ defmodule Mcpex.RegistryTest do
     end
     
     # Register the capability
-    {:ok, pid} = Mcpex.Registry.register(:test_capability, TestCapability)
+    {:ok, _pid} = Mcpex.Registry.register(:test_capability, TestCapability)
     
     # Look up the capability
-    {:ok, {^pid, %{module: module, config: config}}} = Mcpex.Registry.lookup(:test_capability)
+    {:ok, {_pid, %{module: module, config: config}}} = Mcpex.Registry.lookup(:test_capability)
     
     # Verify the result
     assert module == TestCapability

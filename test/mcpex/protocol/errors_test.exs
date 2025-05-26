@@ -5,11 +5,11 @@ defmodule Mcpex.Protocol.ErrorsTest do
 
   describe "error codes" do
     test "returns correct standard error codes" do
-      assert Errors.parse_error() == -32700
-      assert Errors.invalid_request() == -32600
-      assert Errors.method_not_found() == -32601
-      assert Errors.invalid_params() == -32602
-      assert Errors.internal_error() == -32603
+      assert Errors.parse_error() == {-32700, "Parse error", nil}
+      assert Errors.invalid_request() == {-32600, "Invalid Request", nil}
+      assert Errors.method_not_found() == {-32601, "Method not found", nil}
+      assert Errors.invalid_params() == {-32602, "Invalid params", nil}
+      assert Errors.internal_error() == {-32603, "Internal error", nil}
     end
   end
 
