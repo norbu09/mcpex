@@ -103,20 +103,17 @@ defmodule Mcpex.Capabilities.Resources do
   # Helper functions
 
   defp get_resources(_params) do
-    # This would typically get resources from a storage system
-    # For now, we'll return a static list
-    [
-      %{"uri" => "file://example.txt", "name" => "Example File", "mimeType" => "text/plain"},
-      %{"uri" => "file://example.json", "name" => "Example JSON", "mimeType" => "application/json"}
-    ]
+    # Query the registry for registered resources
+    case Mcpex.Registry.lookup(:resources_registry) do
+      {:ok, {_pid, %{resources: resources}}} -> resources
+      _ -> []
+    end
   end
 
   defp read_resource(uri) do
-    # This would typically read a resource from a storage system
-    # For now, we'll return static content based on the URI
-    case uri do
-      "file://example.txt" -> {:ok, "This is an example text file."}
-      "file://example.json" -> {:ok, ~s({"example": "This is an example JSON file."})}
+    # Query the registry for the specific resource content
+    case Mcpex.Registry.lookup({:resource_content, uri}) do
+      {:ok, {_pid, %{content: content}}} -> {:ok, content}
       _ -> {:error, "Resource not found"}
     end
   end

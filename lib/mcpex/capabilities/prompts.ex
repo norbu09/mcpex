@@ -103,84 +103,17 @@ defmodule Mcpex.Capabilities.Prompts do
   # Helper functions
 
   defp get_prompts(_params) do
-    # This would typically get prompts from a storage system
-    # For now, we'll return a static list
-    [
-      %{
-        "name" => "greeting",
-        "description" => "A simple greeting prompt",
-        "argumentSchema" => %{
-          "type" => "object",
-          "properties" => %{
-            "name" => %{
-              "type" => "string",
-              "description" => "The name to greet"
-            }
-          }
-        }
-      },
-      %{
-        "name" => "summary",
-        "description" => "A prompt to summarize text",
-        "argumentSchema" => %{
-          "type" => "object",
-          "properties" => %{
-            "text" => %{
-              "type" => "string",
-              "description" => "The text to summarize"
-            },
-            "length" => %{
-              "type" => "integer",
-              "description" => "The desired summary length in words"
-            }
-          },
-          "required" => ["text"]
-        }
-      }
-    ]
+    # Query the registry for registered prompts
+    case Mcpex.Registry.lookup(:prompts_registry) do
+      {:ok, {_pid, %{prompts: prompts}}} -> prompts
+      _ -> []
+    end
   end
 
   defp get_prompt(name) do
-    # This would typically get a prompt from a storage system
-    # For now, we'll return static content based on the name
-    case name do
-      "greeting" ->
-        {:ok, %{
-          "name" => "greeting",
-          "description" => "A simple greeting prompt",
-          "template" => "Hello, {{name}}!",
-          "argumentSchema" => %{
-            "type" => "object",
-            "properties" => %{
-              "name" => %{
-                "type" => "string",
-                "description" => "The name to greet"
-              }
-            }
-          }
-        }}
-      
-      "summary" ->
-        {:ok, %{
-          "name" => "summary",
-          "description" => "A prompt to summarize text",
-          "template" => "Please summarize the following text in {{length}} words or less:\n\n{{text}}",
-          "argumentSchema" => %{
-            "type" => "object",
-            "properties" => %{
-              "text" => %{
-                "type" => "string",
-                "description" => "The text to summarize"
-              },
-              "length" => %{
-                "type" => "integer",
-                "description" => "The desired summary length in words"
-              }
-            },
-            "required" => ["text"]
-          }
-        }}
-      
+    # Query the registry for the specific prompt
+    case Mcpex.Registry.lookup({:prompt, name}) do
+      {:ok, {_pid, prompt}} -> {:ok, prompt}
       _ -> {:error, "Prompt not found"}
     end
   end

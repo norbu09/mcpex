@@ -125,38 +125,11 @@ defmodule Mcpex.Capabilities.Tools do
   # Helper functions
 
   defp get_tools(_params) do
-    # This would typically get tools from a storage system
-    # For now, we'll return a static list
-    [
-      %{
-        "name" => "calculator",
-        "description" => "A simple calculator tool",
-        "argumentSchema" => %{
-          "type" => "object",
-          "properties" => %{
-            "expression" => %{
-              "type" => "string",
-              "description" => "The mathematical expression to evaluate"
-            }
-          },
-          "required" => ["expression"]
-        }
-      },
-      %{
-        "name" => "weather",
-        "description" => "Get weather information for a location",
-        "argumentSchema" => %{
-          "type" => "object",
-          "properties" => %{
-            "location" => %{
-              "type" => "string",
-              "description" => "The location to get weather for"
-            }
-          },
-          "required" => ["location"]
-        }
-      }
-    ]
+    # Query the registry for registered tools
+    case Mcpex.Registry.lookup(:tools_registry) do
+      {:ok, {_pid, %{tools: tools}}} -> tools
+      _ -> []
+    end
   end
 
   defp execute_tool(name, arguments, session_id) do
