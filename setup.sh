@@ -24,8 +24,8 @@ setup_local_env() {
   if [ ! -d "$HOME/.asdf" ]; then
     echo "Installing asdf..."
     git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.13.1
-    echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
-    echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
+    echo '. "$HOME/.asdf/asdf.sh"' >>~/.bashrc
+    echo '. "$HOME/.asdf/completions/asdf.bash"' >>~/.bashrc
   else
     echo "asdf already installed, skipping installation..."
   fi
@@ -58,7 +58,7 @@ setup_local_env() {
   # Verify installations
   if asdf which erl >/dev/null 2>&1 && asdf which elixir >/dev/null 2>&1; then
     echo "Erlang and Elixir installed successfully!"
-    
+
     # Install Hex package manager and Rebar
     echo "Installing Hex package manager and Rebar..."
     asdf exec mix local.hex --force
@@ -84,18 +84,18 @@ setup_local_env() {
 # Function to setup Docker environment
 setup_docker_env() {
   echo "Setting up Docker environment..."
-  
+
   # Check if docker-compose is installed
   if ! command -v docker-compose >/dev/null 2>&1; then
     echo "Installing docker-compose..."
     curl -L "https://github.com/docker/compose/releases/download/v2.24.6/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
   fi
-  
+
   # Build Docker image
   echo "Building Docker image..."
   docker-compose build
-  
+
   # Run tests in Docker to verify setup
   echo "Running tests in Docker to verify setup..."
   docker-compose run --rm mcpex mix test
@@ -103,23 +103,7 @@ setup_docker_env() {
 
 # Ask user which setup to use
 if [ "$DOCKER_AVAILABLE" = true ]; then
-  echo "Choose your development environment setup:"
-  echo "1) Docker (recommended for Elixir 1.18)"
-  echo "2) Local with asdf"
-  read -p "Enter your choice (1/2): " choice
-  
-  case $choice in
-    1)
-      setup_docker_env
-      ;;
-    2)
-      setup_local_env
-      ;;
-    *)
-      echo "Invalid choice. Using Docker setup by default."
-      setup_docker_env
-      ;;
-  esac
+  setup_docker_env
 else
   setup_local_env
 fi
@@ -141,3 +125,4 @@ echo "  - make run         # Run the application"
 echo "  - make test        # Run tests"
 echo "  - make docker-run  # Run with Docker"
 echo "  - make help        # Show all available commands"
+
