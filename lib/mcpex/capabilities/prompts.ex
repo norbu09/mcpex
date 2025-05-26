@@ -105,7 +105,7 @@ defmodule Mcpex.Capabilities.Prompts do
   defp get_prompts(_params) do
     # Query the registry for registered prompts
     case Mcpex.Registry.lookup(:prompts_registry) do
-      {:ok, {_pid, %{prompts: prompts}}} -> prompts
+      {:ok, {_pid, %{config: %{prompts: prompts}}}} -> prompts
       _ -> []
     end
   end
@@ -113,7 +113,7 @@ defmodule Mcpex.Capabilities.Prompts do
   defp get_prompt(name) do
     # Query the registry for the specific prompt
     case Mcpex.Registry.lookup({:prompt, name}) do
-      {:ok, {_pid, prompt}} -> {:ok, prompt}
+      {:ok, {_pid, %{config: prompt}}} -> {:ok, prompt}
       _ -> {:error, "Prompt not found"}
     end
   end

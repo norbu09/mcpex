@@ -105,7 +105,7 @@ defmodule Mcpex.Capabilities.Resources do
   defp get_resources(_params) do
     # Query the registry for registered resources
     case Mcpex.Registry.lookup(:resources_registry) do
-      {:ok, {_pid, %{resources: resources}}} -> resources
+      {:ok, {_pid, %{config: %{resources: resources}}}} -> resources
       _ -> []
     end
   end
@@ -113,7 +113,7 @@ defmodule Mcpex.Capabilities.Resources do
   defp read_resource(uri) do
     # Query the registry for the specific resource content
     case Mcpex.Registry.lookup({:resource_content, uri}) do
-      {:ok, {_pid, %{content: content}}} -> {:ok, content}
+      {:ok, {_pid, %{config: %{content: content}}}} -> {:ok, content}
       _ -> {:error, "Resource not found"}
     end
   end

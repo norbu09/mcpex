@@ -1,7 +1,7 @@
 defmodule Mcpex.Capabilities.Tools do
   @moduledoc """
   Tools capability implementation.
-  
+
   This module implements the tools capability, which allows clients to:
   - List available tools
   - Execute tools
@@ -46,25 +46,25 @@ defmodule Mcpex.Capabilities.Tools do
 
   defp handle_list(params, session_id) do
     Logger.info("Listing tools for session #{session_id} with params: #{inspect(params)}")
-    
-    # Get tools from the registry or other storage
+
+    # Get tools from the registry
     tools = get_tools(params)
-    
+
     {:ok, %{"tools" => tools}}
   end
 
   defp handle_execute(params, session_id) do
     Logger.info("Executing tool for session #{session_id} with params: #{inspect(params)}")
-    
+
     name = Map.get(params, "name")
     arguments = Map.get(params, "arguments", %{})
-    
+
     if name do
       # Execute the tool
       case execute_tool(name, arguments, session_id) do
         {:ok, result} ->
           {:ok, result}
-        
+
         {:error, reason} ->
           {:error, Errors.internal_error("Failed to execute tool: #{reason}")}
       end
@@ -75,18 +75,13 @@ defmodule Mcpex.Capabilities.Tools do
 
   defp handle_cancel(params, session_id) do
     Logger.info("Cancelling tool execution for session #{session_id} with params: #{inspect(params)}")
-    
+
     execution_id = Map.get(params, "executionId")
-    
+
     if execution_id do
       # Cancel the tool execution
-      case cancel_tool_execution(execution_id, session_id) do
-        :ok ->
-          {:ok, %{}}
-        
-        {:error, reason} ->
-          {:error, Errors.internal_error("Failed to cancel tool execution: #{reason}")}
-      end
+      cancel_tool_execution(execution_id, session_id)
+      {:ok, %{}}
     else
       {:error, Errors.invalid_params("Missing required parameter: executionId")}
     end
@@ -94,13 +89,13 @@ defmodule Mcpex.Capabilities.Tools do
 
   defp handle_subscribe(params, session_id) do
     Logger.info("Subscribing to tools for session #{session_id} with params: #{inspect(params)}")
-    
+
     name = Map.get(params, "name")
-    
+
     if name do
       # Register subscription in the registry
       subscribe_to_tool(name, session_id)
-      
+
       {:ok, %{"subscriptionId" => "tool:#{name}"}}
     else
       {:error, Errors.invalid_params("Missing required parameter: name")}
@@ -109,13 +104,13 @@ defmodule Mcpex.Capabilities.Tools do
 
   defp handle_unsubscribe(params, session_id) do
     Logger.info("Unsubscribing from tools for session #{session_id} with params: #{inspect(params)}")
-    
+
     subscription_id = Map.get(params, "subscriptionId")
-    
+
     if subscription_id do
       # Unregister subscription in the registry
       unsubscribe_from_tool(subscription_id, session_id)
-      
+
       {:ok, %{}}
     else
       {:error, Errors.invalid_params("Missing required parameter: subscriptionId")}
@@ -127,56 +122,21 @@ defmodule Mcpex.Capabilities.Tools do
   defp get_tools(_params) do
     # Query the registry for registered tools
     case Mcpex.Registry.lookup(:tools_registry) do
-      {:ok, {_pid, %{tools: tools}}} -> tools
+      {:ok, {_pid, %{config: %{tools: tools}}}} -> tools
       _ -> []
     end
   end
 
-  defp execute_tool(name, arguments, session_id) do
-    # This would typically execute a tool and return the result
-    # For now, we'll return static results based on the tool name
-    execution_id = "exec-#{:erlang.system_time(:millisecond)}"
-    
-    case name do
-      "calculator" ->
-        expression = Map.get(arguments, "expression", "")
-        
-        # This is a simplified example - in a real implementation, you would
-        # validate the expression and use a proper parser/evaluator
-        result = case Code.string_to_quoted(expression) do
-          {:ok, ast} ->
-            try do
-              {result, _} = Code.eval_quoted(ast)
-              "#{result}"
-            rescue
-              _ -> "Error evaluating expression"
-            end
-          
-          {:error, _} ->
-            "Invalid expression"
+  defp execute_tool(name, arguments, _session_id) do
+    # Get tool executors from registry
+    case Mcpex.Registry.lookup(:tool_executors) do
+      {:ok, {_pid, %{config: %{executors: executors}}}} ->
+        case Map.get(executors, name) do
+          nil -> {:error, "Unknown tool: #{name}"}
+          executor when is_function(executor) -> executor.(arguments)
         end
-        
-        {:ok, %{
-          "executionId" => execution_id,
-          "content" => [%{
-            "type" => "text",
-            "text" => "Result: #{result}"
-          }]
-        }}
-      
-      "weather" ->
-        location = Map.get(arguments, "location", "")
-        
-        # In a real implementation, you would call a weather API
-        {:ok, %{
-          "executionId" => execution_id,
-          "content" => [%{
-            "type" => "text",
-            "text" => "Weather for #{location}: Sunny, 25°C"
-          }]
-        }}
-      
-      _ -> {:error, "Tool not found"}
+      _ ->
+        {:error, "No tool executors found"}
     end
   end
 

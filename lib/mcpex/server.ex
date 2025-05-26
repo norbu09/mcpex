@@ -172,7 +172,7 @@ defmodule Mcpex.Server do
     
     # Send initialized notification
     # This would typically be done by the transport layer
-    initialized_notification = JsonRpc.notification("initialized", %{})
+    _initialized_notification = JsonRpc.notification("initialized", %{})
     Logger.info("Sending initialized notification to session #{session_id}")
     
     {:reply, {:ok, response}, new_state}

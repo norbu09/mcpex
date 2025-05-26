@@ -9,7 +9,6 @@ defmodule Mcpex.Handlers.Initialization do
   """
 
   require Logger
-  alias Mcpex.Protocol.Errors
 
   @doc """
   Handles an initialization request.

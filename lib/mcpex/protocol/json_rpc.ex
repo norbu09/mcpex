@@ -111,6 +111,16 @@ defmodule Mcpex.Protocol.JsonRpc do
         id: "1"
       }
   """
+  @spec error_response(id(), {integer(), String.t(), error_data()} | integer()) :: error_response()
+  def error_response(id, {code, message, data}) do
+    error_response(code, message, data, id)
+  end
+  
+  def error_response(id, code) when is_integer(code) do
+    message = Mcpex.Protocol.Errors.error_message(code)
+    error_response(code, message, nil, id)
+  end
+  
   @spec error_response(integer(), String.t(), error_data(), id()) :: error_response()
   def error_response(code, message, data \\ nil, id) do
     error = %{
@@ -125,6 +135,8 @@ defmodule Mcpex.Protocol.JsonRpc do
       id: id
     }
   end
+  
+
 
   @doc """
   Creates a JSON-RPC 2.0 notification message.
