@@ -1,0 +1,228 @@
+defmodule Mcpex.Capabilities.Tools do
+  @moduledoc """
+  Tools capability implementation.
+  
+  This module implements the tools capability, which allows clients to:
+  - List available tools
+  - Execute tools
+  - Receive progress updates
+  - Receive notifications about tool changes
+  """
+
+  @behaviour Mcpex.Capabilities.Behaviour
+
+  require Logger
+  alias Mcpex.Protocol.Errors
+
+  # Capability behaviour implementation
+
+  @impl true
+  def supports?(_client_capabilities) do
+    # Tools capability is always supported
+    true
+  end
+
+  @impl true
+  def get_server_capabilities(_config) do
+    %{
+      "supportsProgress" => true,
+      "supportsSubscriptions" => true
+    }
+  end
+
+  @impl true
+  def handle_request(method, params, session_id) do
+    case method do
+      "tools/list" -> handle_list(params, session_id)
+      "tools/execute" -> handle_execute(params, session_id)
+      "tools/cancel" -> handle_cancel(params, session_id)
+      "tools/subscribe" -> handle_subscribe(params, session_id)
+      "tools/unsubscribe" -> handle_unsubscribe(params, session_id)
+      _ -> {:error, Errors.method_not_found()}
+    end
+  end
+
+  # Request handlers
+
+  defp handle_list(params, session_id) do
+    Logger.info("Listing tools for session #{session_id} with params: #{inspect(params)}")
+    
+    # Get tools from the registry or other storage
+    tools = get_tools(params)
+    
+    {:ok, %{"tools" => tools}}
+  end
+
+  defp handle_execute(params, session_id) do
+    Logger.info("Executing tool for session #{session_id} with params: #{inspect(params)}")
+    
+    name = Map.get(params, "name")
+    arguments = Map.get(params, "arguments", %{})
+    
+    if name do
+      # Execute the tool
+      case execute_tool(name, arguments, session_id) do
+        {:ok, result} ->
+          {:ok, result}
+        
+        {:error, reason} ->
+          {:error, Errors.internal_error("Failed to execute tool: #{reason}")}
+      end
+    else
+      {:error, Errors.invalid_params("Missing required parameter: name")}
+    end
+  end
+
+  defp handle_cancel(params, session_id) do
+    Logger.info("Cancelling tool execution for session #{session_id} with params: #{inspect(params)}")
+    
+    execution_id = Map.get(params, "executionId")
+    
+    if execution_id do
+      # Cancel the tool execution
+      case cancel_tool_execution(execution_id, session_id) do
+        :ok ->
+          {:ok, %{}}
+        
+        {:error, reason} ->
+          {:error, Errors.internal_error("Failed to cancel tool execution: #{reason}")}
+      end
+    else
+      {:error, Errors.invalid_params("Missing required parameter: executionId")}
+    end
+  end
+
+  defp handle_subscribe(params, session_id) do
+    Logger.info("Subscribing to tools for session #{session_id} with params: #{inspect(params)}")
+    
+    name = Map.get(params, "name")
+    
+    if name do
+      # Register subscription in the registry
+      subscribe_to_tool(name, session_id)
+      
+      {:ok, %{"subscriptionId" => "tool:#{name}"}}
+    else
+      {:error, Errors.invalid_params("Missing required parameter: name")}
+    end
+  end
+
+  defp handle_unsubscribe(params, session_id) do
+    Logger.info("Unsubscribing from tools for session #{session_id} with params: #{inspect(params)}")
+    
+    subscription_id = Map.get(params, "subscriptionId")
+    
+    if subscription_id do
+      # Unregister subscription in the registry
+      unsubscribe_from_tool(subscription_id, session_id)
+      
+      {:ok, %{}}
+    else
+      {:error, Errors.invalid_params("Missing required parameter: subscriptionId")}
+    end
+  end
+
+  # Helper functions
+
+  defp get_tools(_params) do
+    # This would typically get tools from a storage system
+    # For now, we'll return a static list
+    [
+      %{
+        "name" => "calculator",
+        "description" => "A simple calculator tool",
+        "argumentSchema" => %{
+          "type" => "object",
+          "properties" => %{
+            "expression" => %{
+              "type" => "string",
+              "description" => "The mathematical expression to evaluate"
+            }
+          },
+          "required" => ["expression"]
+        }
+      },
+      %{
+        "name" => "weather",
+        "description" => "Get weather information for a location",
+        "argumentSchema" => %{
+          "type" => "object",
+          "properties" => %{
+            "location" => %{
+              "type" => "string",
+              "description" => "The location to get weather for"
+            }
+          },
+          "required" => ["location"]
+        }
+      }
+    ]
+  end
+
+  defp execute_tool(name, arguments, session_id) do
+    # This would typically execute a tool and return the result
+    # For now, we'll return static results based on the tool name
+    execution_id = "exec-#{:erlang.system_time(:millisecond)}"
+    
+    case name do
+      "calculator" ->
+        expression = Map.get(arguments, "expression", "")
+        
+        # This is a simplified example - in a real implementation, you would
+        # validate the expression and use a proper parser/evaluator
+        result = case Code.string_to_quoted(expression) do
+          {:ok, ast} ->
+            try do
+              {result, _} = Code.eval_quoted(ast)
+              "#{result}"
+            rescue
+              _ -> "Error evaluating expression"
+            end
+          
+          {:error, _} ->
+            "Invalid expression"
+        end
+        
+        {:ok, %{
+          "executionId" => execution_id,
+          "content" => [%{
+            "type" => "text",
+            "text" => "Result: #{result}"
+          }]
+        }}
+      
+      "weather" ->
+        location = Map.get(arguments, "location", "")
+        
+        # In a real implementation, you would call a weather API
+        {:ok, %{
+          "executionId" => execution_id,
+          "content" => [%{
+            "type" => "text",
+            "text" => "Weather for #{location}: Sunny, 25°C"
+          }]
+        }}
+      
+      _ -> {:error, "Tool not found"}
+    end
+  end
+
+  defp cancel_tool_execution(execution_id, _session_id) do
+    # This would typically cancel a tool execution
+    # For now, we'll just log it
+    Logger.debug("Cancelled tool execution #{execution_id}")
+    :ok
+  end
+
+  defp subscribe_to_tool(name, session_id) do
+    # This would typically register a subscription in a subscription store
+    # For now, we'll just log it
+    Logger.debug("Registered subscription for session #{session_id} to tool #{name}")
+  end
+
+  defp unsubscribe_from_tool(subscription_id, session_id) do
+    # This would typically unregister a subscription in a subscription store
+    # For now, we'll just log it
+    Logger.debug("Unregistered subscription #{subscription_id} for session #{session_id}")
+  end
+end
