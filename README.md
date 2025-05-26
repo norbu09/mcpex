@@ -4,6 +4,11 @@ MCPEX is an Elixir implementation of the Machine Chat Protocol (MCP).
 
 ## Development Setup
 
+### Requirements
+
+- Elixir 1.18 or later
+- Erlang/OTP 25 or later
+
 ### Automated Setup
 
 For a quick setup in the development VM, run:
@@ -13,7 +18,7 @@ For a quick setup in the development VM, run:
 ```
 
 This script will:
-1. Install Erlang and Elixir
+1. Install Erlang and Elixir 1.18
 2. Install Hex package manager and Rebar
 3. Fetch project dependencies
 4. Compile the project
@@ -61,10 +66,14 @@ make help
 
 If you prefer to set up manually:
 
-1. Install Erlang and Elixir:
+1. Install Erlang and Elixir 1.18:
    ```bash
    apt-get update
-   apt-get install -y elixir erlang-dev
+   apt-get install -y wget gnupg2 erlang-dev
+   wget https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb
+   dpkg -i erlang-solutions_2.0_all.deb
+   apt-get update
+   apt-get install -y esl-erlang elixir=1.18.0-1
    ```
 
 2. Install Hex package manager and Rebar:

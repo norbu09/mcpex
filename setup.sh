@@ -6,7 +6,15 @@ echo "Setting up MCPEX development environment..."
 # Install Erlang and Elixir
 echo "Installing Erlang and Elixir..."
 apt-get update
-apt-get install -y elixir erlang-dev
+apt-get install -y wget gnupg2 erlang-dev
+
+# Add Erlang Solutions repository for Elixir 1.18
+echo "Adding Erlang Solutions repository for Elixir 1.18..."
+wget https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb
+dpkg -i erlang-solutions_2.0_all.deb
+apt-get update
+apt-get install -y esl-erlang elixir=1.18.0-1
+rm erlang-solutions_2.0_all.deb
 
 # Install Hex package manager and Rebar
 echo "Installing Hex package manager and Rebar..."
