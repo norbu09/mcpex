@@ -24,6 +24,7 @@ defmodule Mcpex.MixProject do
     [
       # Schema validation
       {:ex_json_schema, "~> 0.10"},
+      {:ex_rated, "~> 0.7"},
 
       # HTTP server and transport
       {:plug, "~> 1.17"},
