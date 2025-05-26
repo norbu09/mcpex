@@ -161,3 +161,9 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/mcpex>.
 
+## JSON Handling
+
+MCPEX uses Elixir's built-in `JSON` module (available since Elixir 1.18) for all JSON encoding and decoding operations. Please do not add Jason or other JSON libraries as dependencies when working with this project.
+
+For more details on JSON usage in this project, see [docs/json_usage.md](docs/json_usage.md).
+
