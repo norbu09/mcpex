@@ -35,3 +35,7 @@ mcpex-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Elixir installation files
+/elixir/
+/elixir-otp-27.zip
+
