@@ -6,8 +6,8 @@ MCPEX is an Elixir implementation of the Machine Chat Protocol (MCP).
 
 ### Requirements
 
-- Elixir 1.18 or later
-- Erlang/OTP 25 or later
+- Elixir 1.18.3 with Erlang/OTP 27
+- The project includes a `.tool-versions` file for use with [asdf](https://asdf-vm.com/)
 
 ### Automated Setup
 
@@ -18,11 +18,12 @@ For a quick setup in the development VM, run:
 ```
 
 This script will:
-1. Install Erlang and Elixir 1.18
-2. Install Hex package manager and Rebar
-3. Fetch project dependencies
-4. Compile the project
-5. Run tests to verify the setup
+1. Install asdf version manager
+2. Install Erlang 27.0 and Elixir 1.18.3 using asdf
+3. Install Hex package manager and Rebar
+4. Fetch project dependencies
+5. Compile the project
+6. Run tests to verify the setup
 
 ### Using the Makefile
 
@@ -66,14 +67,26 @@ make help
 
 If you prefer to set up manually:
 
-1. Install Erlang and Elixir 1.18:
+1. Install asdf version manager:
    ```bash
+   git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.13.1
+   echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
+   echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
+   source ~/.asdf/asdf.sh
+   ```
+
+2. Install Erlang and Elixir using asdf:
+   ```bash
+   # Install required dependencies for building Erlang
    apt-get update
-   apt-get install -y wget gnupg2 erlang-dev
-   wget https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb
-   dpkg -i erlang-solutions_2.0_all.deb
-   apt-get update
-   apt-get install -y esl-erlang elixir=1.18.0-1
+   apt-get install -y build-essential autoconf m4 libncurses5-dev libwxgtk3.0-gtk3-dev libwxgtk-webview3.0-gtk3-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev xsltproc fop libxml2-utils libncurses-dev openjdk-11-jdk
+   
+   # Install asdf plugins
+   asdf plugin add erlang
+   asdf plugin add elixir
+   
+   # Install versions from .tool-versions file
+   asdf install
    ```
 
 2. Install Hex package manager and Rebar:

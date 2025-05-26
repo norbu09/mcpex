@@ -1,4 +1,4 @@
-.PHONY: setup deps compile test run clean docker-build docker-run docker-stop
+.PHONY: setup deps compile test run clean docker-build docker-run docker-stop asdf-install
 
 # Default task
 all: deps compile test
@@ -49,10 +49,18 @@ docker-run:
 docker-stop:
 	docker-compose down
 
+# Install Erlang and Elixir using asdf
+asdf-install:
+	@command -v asdf >/dev/null 2>&1 || { echo "asdf is not installed. Please install it first."; exit 1; }
+	asdf plugin add erlang || true
+	asdf plugin add elixir || true
+	asdf install
+
 # Help
 help:
 	@echo "Available targets:"
 	@echo "  setup        - Run setup script to install dependencies"
+	@echo "  asdf-install - Install Erlang and Elixir using asdf"
 	@echo "  deps         - Get project dependencies"
 	@echo "  compile      - Compile the project"
 	@echo "  test         - Run tests"
