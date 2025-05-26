@@ -7,9 +7,12 @@ defmodule Mcpex.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      # Starts a worker by calling: Mcpex.Worker.start_link(arg)
-      # {Mcpex.Worker, arg}
+        children = [
+      # MCP Session Store Server for cleanup and ETS table management
+      {Mcpex.Session.StoreServer, [table: :mcpex_sessions]},
+
+      # HTTP server with MCP router (optional - can be started separately)
+      # {Bandit, plug: Mcpex.Router, scheme: :http, port: 4000}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
