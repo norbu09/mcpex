@@ -125,13 +125,13 @@ defmodule Mcpex.Transport.Behaviour do
   """
   @spec send_json_response(Conn.t(), integer(), term()) :: Conn.t()
   def send_json_response(conn, status, data) do
-    case JSON.encode(data) do
-      {:ok, json} ->
-        conn
-        |> Conn.put_resp_content_type("application/json")
-        |> Conn.send_resp(status, json)
-
-      {:error, _} ->
+    try do
+      json = JSON.encode!(data)
+      conn
+      |> Conn.put_resp_content_type("application/json")
+      |> Conn.send_resp(status, json)
+    rescue
+      _ ->
         conn
         |> Conn.put_resp_content_type("application/json")
         |> Conn.send_resp(500, ~s({"error": "Internal server error"}))
