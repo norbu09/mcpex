@@ -52,9 +52,23 @@ docker-stop:
 # Install Erlang and Elixir using asdf
 asdf-install:
 	@command -v asdf >/dev/null 2>&1 || { echo "asdf is not installed. Please install it first."; exit 1; }
-	asdf plugin add erlang || true
-	asdf plugin add elixir || true
-	asdf install
+	@echo "Adding asdf plugins..."
+	asdf plugin add erlang || echo "Erlang plugin already installed"
+	asdf plugin add elixir || echo "Elixir plugin already installed"
+	@echo "Installing Elixir (this should be quick)..."
+	asdf install elixir || echo "Failed to install Elixir. Continuing with Erlang..."
+	@echo "Installing Erlang (this may take 10-20 minutes)..."
+	@echo "You can check the progress in another terminal with: tail -f ~/.asdf/plugins/erlang/kerl-home/builds/asdf_*/otp_build*.log"
+	asdf install erlang || echo "Failed to install Erlang. Please check your .tool-versions file."
+	@if asdf which erl >/dev/null 2>&1 && asdf which elixir >/dev/null 2>&1; then \
+		echo "Erlang and Elixir installed successfully!"; \
+		echo "Installing Hex and Rebar..."; \
+		asdf exec mix local.hex --force; \
+		asdf exec mix local.rebar --force; \
+	else \
+		echo "Warning: Erlang and/or Elixir installation may not be complete."; \
+		echo "You may need to run 'asdf install' manually."; \
+	fi
 
 # Help
 help:

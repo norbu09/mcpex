@@ -19,11 +19,16 @@ For a quick setup in the development VM, run:
 
 This script will:
 1. Install asdf version manager
-2. Install Erlang 27.0 and Elixir 1.18.3 using asdf
+2. Install Erlang 27.0 and Elixir 1.18.3 using asdf (note: Erlang compilation may take 10-20 minutes)
 3. Install Hex package manager and Rebar
 4. Fetch project dependencies
 5. Compile the project
 6. Run tests to verify the setup
+
+> **Note:** Erlang compilation can take a significant amount of time (10-20 minutes) as it builds from source. You can monitor the progress in another terminal with:
+> ```bash
+> tail -f ~/.asdf/plugins/erlang/kerl-home/builds/asdf_*/otp_build*.log
+> ```
 
 ### Using the Makefile
 
@@ -79,7 +84,7 @@ If you prefer to set up manually:
    ```bash
    # Install required dependencies for building Erlang
    apt-get update
-   apt-get install -y build-essential autoconf m4 libncurses5-dev libwxgtk3.0-gtk3-dev libwxgtk-webview3.0-gtk3-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev xsltproc fop libxml2-utils libncurses-dev openjdk-11-jdk
+   apt-get install -y build-essential autoconf m4 libncurses5-dev libwxgtk3.2-dev libwxgtk-webview3.2-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev xsltproc fop libxml2-utils libncurses-dev openjdk-17-jdk
    
    # Install asdf plugins
    asdf plugin add erlang
