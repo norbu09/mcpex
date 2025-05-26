@@ -214,7 +214,7 @@ defmodule Mcpex.Protocol.JsonRpcTest do
       assert is_binary(json)
 
       # Verify it can be parsed back
-      assert {:ok, parsed} = Jason.decode(json)
+      assert {:ok, parsed} = JSON.decode(json)
       assert parsed["jsonrpc"] == "2.0"
       assert parsed["method"] == "test"
       assert parsed["id"] == "1"
@@ -230,7 +230,7 @@ defmodule Mcpex.Protocol.JsonRpcTest do
       assert is_binary(json)
 
       # Verify it can be parsed back
-      assert {:ok, parsed} = Jason.decode(json)
+      assert {:ok, parsed} = JSON.decode(json)
       assert is_list(parsed)
       assert length(parsed) == 2
     end

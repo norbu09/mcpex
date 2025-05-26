@@ -165,9 +165,9 @@ defmodule Mcpex.Protocol.JsonRpc do
   """
   @spec parse(String.t()) :: {:ok, message() | [message()]} | {:error, {atom(), String.t()}}
   def parse(json_string) when is_binary(json_string) do
-    case Jason.decode(json_string) do
+    case JSON.decode(json_string) do
       {:ok, data} -> validate_message(data)
-      {:error, %Jason.DecodeError{}} -> {:error, {:parse_error, "Invalid JSON"}}
+      {:error, %JSON.DecodeError{}} -> {:error, {:parse_error, "Invalid JSON"}}
       {:error, _} -> {:error, {:parse_error, "Invalid JSON"}}
     end
   end
@@ -188,9 +188,9 @@ defmodule Mcpex.Protocol.JsonRpc do
   """
   @spec encode(message() | [message()]) :: {:ok, String.t()} | {:error, {atom(), String.t()}}
   def encode(message) do
-    case Jason.encode(message) do
+    case JSON.encode(message) do
       {:ok, json} -> {:ok, json}
-      {:error, %Jason.EncodeError{}} -> {:error, {:internal_error, "Failed to encode message"}}
+      {:error, %JSON.EncodeError{}} -> {:error, {:internal_error, "Failed to encode message"}}
       {:error, _} -> {:error, {:internal_error, "Failed to encode message"}}
     end
   end
