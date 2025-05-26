@@ -60,7 +60,7 @@ defmodule Mcpex.RateLimiter.ExRatedStrategy do
     table_name = state.table_name
     rule_config = Map.get(state.rules, rule_name)
 
-    if is_nil?(rule_config) do
+    if is_nil(rule_config) do
       Logger.warn("Rate limiting rule_name '#{rule_name}' not found in ExRatedStrategy configuration.")
       {:ok, state, %{reason: "Rule not configured: #{rule_name}"}}
     else
