@@ -20,7 +20,7 @@ defmodule Mcpex.MixProject do
   end
 
   # Run "mix help deps" to learn about dependencies.
-  defp deps do
+    defp deps do
     [
       # JSON handling
       {:jason, "~> 1.4"},
@@ -28,10 +28,15 @@ defmodule Mcpex.MixProject do
       # Schema validation
       {:ex_json_schema, "~> 0.10"},
 
+      # HTTP server and transport
+      {:plug, "~> 1.17"},
+      {:bandit, "~> 1.0"},
+
       # Development and testing
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:bypass, "~> 2.1", only: :test}
     ]
   end
 end

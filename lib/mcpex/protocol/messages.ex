@@ -222,6 +222,10 @@ defmodule Mcpex.Protocol.Messages do
   Validates MCP capabilities object.
   """
   @spec validate_capabilities(map()) :: {:ok, capabilities()} | {:error, String.t()}
+  def validate_capabilities(%{"capabilities" => capabilities}) when is_map(capabilities) do
+    {:ok, normalize_capabilities(capabilities)}
+  end
+
   def validate_capabilities(%{capabilities: capabilities}) when is_map(capabilities) do
     {:ok, normalize_capabilities(capabilities)}
   end
@@ -234,6 +238,10 @@ defmodule Mcpex.Protocol.Messages do
 
   # Private functions
 
+  defp validate_protocol_version(%{"protocolVersion" => version}) when is_binary(version) do
+    {:ok, version}
+  end
+
   defp validate_protocol_version(%{protocolVersion: version}) when is_binary(version) do
     {:ok, version}
   end
@@ -244,6 +252,15 @@ defmodule Mcpex.Protocol.Messages do
 
   defp validate_protocol_version(_) do
     {:error, "protocolVersion must be a string"}
+  end
+
+  defp validate_client_info(%{"clientInfo" => %{"name" => name, "version" => version}})
+    when is_binary(name) and is_binary(version) do
+    {:ok, %{name: name, version: version}}
+  end
+
+  defp validate_client_info(%{"clientInfo" => %{"name" => name}}) when is_binary(name) do
+    {:ok, %{name: name, version: "unknown"}}
   end
 
   defp validate_client_info(%{clientInfo: %{name: name, version: version}})
