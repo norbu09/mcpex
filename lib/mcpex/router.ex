@@ -1,16 +1,14 @@
 defmodule Mcpex.Router do
-  # TODO: fix the documentation to reflect the actual message handling in Mcpex.MessageHandler
-  # TODO: make sure the new rate-limiting message handler is used everywhere
   @moduledoc """
   Main router for MCP server endpoints.
 
   This router demonstrates how to integrate both MCP transport implementations
   (SSE and Streamable HTTP) into a single application using Plug.Router.
 
-  All MCP messages processed via `handle_mcp_message/3` are subject to rate limiting
-  based on session ID and the type of request. If a client exceeds the configured
-  rate limits, they will receive a JSON-RPC error response (typically code -32029)
-  indicating "Too Many Requests".
+  All MCP messages are processed via `Mcpex.MessageHandler.handle_message/3` which
+  applies rate limiting based on session ID and the type of request. If a client 
+  exceeds the configured rate limits, they will receive a JSON-RPC error response 
+  (typically code -32029) indicating "Too Many Requests".
 
   ## Usage
 
@@ -65,7 +63,7 @@ defmodule Mcpex.Router do
 
   # SSE transport endpoints
   post "/mcp/sse" do
-    SSE.handle_request(conn)
+    SSE.call(conn, [])
   end
 
   get "/mcp/sse/stream" do
@@ -74,7 +72,7 @@ defmodule Mcpex.Router do
 
   # Streamable HTTP transport endpoints
   post "/mcp" do
-    StreamableHttp.handle_request(conn)
+    StreamableHttp.call(conn, [])
   end
 
   get "/mcp/stream" do

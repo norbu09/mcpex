@@ -30,6 +30,7 @@ MCPEX is an Elixir implementation of the Machine Chat Protocol (MCP). The projec
    - Write comprehensive ExUnit tests for all new functionality
    - Run tests with `mix test` before submitting changes
    - Use `Mox` for mocking when appropriate
+   - Use Docker-based testing for consistent environments (see Docker Testing section below)
 
 ## Workflow Guidelines
 
@@ -86,4 +87,27 @@ MCPEX is an Elixir implementation of the Machine Chat Protocol (MCP). The projec
    - Consider performance implications of changes
    - Use Elixir's concurrency features appropriately
    - Optimize critical paths when necessary
+
+## Docker Testing
+
+1. **Building the Docker Image**:
+   - Use `make docker-build` to build the Docker image
+   - The image includes Elixir 1.18.4 with OTP 27 and all dependencies
+
+2. **Running Tests in Docker**:
+   - Use `make docker-test` to run the full test suite in Docker
+   - For specific tests: `make docker-exec CMD='mix test path/to/test.exs:line_number'`
+   - Example: `make docker-exec CMD='mix test test/mcpex/rate_limiter/genserver_test.exs:35'`
+
+3. **Docker Environment**:
+   - Provides consistent testing environment across all development machines
+   - Isolates tests from host system dependencies
+   - Ensures reproducible test results
+   - Simplifies CI/CD integration
+
+4. **Troubleshooting Docker**:
+   - If Docker daemon isn't running: `dockerd > /tmp/docker.log 2>&1 &`
+   - Check Docker logs: `cat /tmp/docker.log`
+   - View Docker status: `docker ps`
+   - Get a shell in the container: `make docker-shell`
 

@@ -40,16 +40,32 @@ defmodule Mcpex.RateLimiter.ServerTest do
         def check_and_update_limit(_state, _id, _rule), do: {:ok, :some_state, %{}}
       end
 
-      # Disable ETS table creation for this failing strategy test
-      opts = [strategy_module: FailingStrategy, table_name: nil, rules: []]
+      # Use a unique name for this test to avoid conflicts
+      unique_name = :"FailingStrategyServer_#{System.unique_integer([:positive])}"
       
-      # start_supervised!/2 will raise if the process fails to start.
-      # We need to check the supervisor's child termination reason or use a monitor.
-      # For simplicity, we'll check if the process is alive after attempting to start.
-      # A more robust test would monitor the process.
-      {:error, reason} = Server.start_link(opts) # Not using start_supervised here for finer control
-      assert reason == {:shutdown, {:failed_to_start_child, nil, {:failed_to_initialize_strategy, :init_failed}}} 
-      # or just assert it's not an :ok tuple
+      # Disable ETS table creation for this failing strategy test
+      opts = [
+        strategy_module: FailingStrategy, 
+        table_name: nil, 
+        rules: [],
+        name: unique_name
+      ]
+      
+      # We expect this to fail with an exit signal
+      # Use Process.flag to convert exit signals to messages for this test
+      Process.flag(:trap_exit, true)
+      
+      # Start the server in a separate process so we can monitor it
+      pid = spawn_link(fn -> Server.start_link(opts) end)
+      
+      # Wait for the exit message
+      assert_receive {:EXIT, ^pid, reason}, 1000
+      
+      # Verify the error reason
+      assert reason == {:failed_to_initialize_strategy, :init_failed}
+      
+      # Reset the trap_exit flag
+      Process.flag(:trap_exit, false)
     end
   end
 

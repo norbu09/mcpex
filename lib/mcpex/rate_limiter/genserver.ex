@@ -97,6 +97,7 @@ defmodule Mcpex.RateLimiter.Server do
       {:ok, strategy_state} ->
         {:ok, %{strategy_module: strategy_module, strategy_state: strategy_state}}
       {:error, reason} ->
+        # Return the error in the format expected by the test
         {:stop, {:failed_to_initialize_strategy, reason}}
     end
   end
