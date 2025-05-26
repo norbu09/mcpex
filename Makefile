@@ -1,4 +1,4 @@
-.PHONY: setup deps compile test run clean docker-build docker-run docker-stop asdf-install
+.PHONY: setup deps compile test run clean docker-build docker-run docker-stop docker-test docker-shell asdf-install
 
 # Default task
 all: deps compile test
@@ -49,6 +49,20 @@ docker-run:
 docker-stop:
 	docker-compose down
 
+docker-test:
+	docker-compose run --rm mcpex mix test
+
+docker-shell:
+	docker-compose run --rm mcpex bash
+
+# Run a specific command in Docker
+docker-exec:
+	@if [ -z "$(CMD)" ]; then \
+		echo "Usage: make docker-exec CMD='mix some.task'"; \
+	else \
+		docker-compose run --rm mcpex $(CMD); \
+	fi
+
 # Install Erlang and Elixir using asdf
 asdf-install:
 	@command -v asdf >/dev/null 2>&1 || { echo "asdf is not installed. Please install it first."; exit 1; }
@@ -86,3 +100,6 @@ help:
 	@echo "  docker-build - Build Docker image"
 	@echo "  docker-run   - Run with Docker Compose"
 	@echo "  docker-stop  - Stop Docker containers"
+	@echo "  docker-test  - Run tests in Docker"
+	@echo "  docker-shell - Get a shell in the Docker container"
+	@echo "  docker-exec  - Run a specific command in Docker (e.g., make docker-exec CMD='mix some.task')"
