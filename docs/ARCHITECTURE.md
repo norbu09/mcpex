@@ -184,6 +184,103 @@ end
 4. **TLS Support**: Built-in HTTPS support for production deployments
 5. **Rate Limiting**: Configurable rate limiting per client/session
 
+## Rate Limiting
+
+### Overview
+
+The MCPEX server implements rate limiting to protect against abuse and ensure fair usage of resources. Incoming MCP messages handled by the main `Mcpex.Router` are subject to rate limits based on the client's session ID and the type of operation being performed.
+
+### Mechanism
+
+Rate limiting is managed by the `Mcpex.RateLimiter.Server`, a GenServer that utilizes a strategy pattern based on the `Mcpex.RateLimiter.Behaviour`. The default strategy, `Mcpex.RateLimiter.ExRatedStrategy`, uses the `ExRated` library with an ETS backend to track request counts for different rules.
+
+Each call to the `Mcpex.Router.handle_mcp_message/3` function first checks with the `Mcpex.RateLimiter.Server` to ensure the request is within the configured limits for its session ID and the requested MCP method (or a general category for it).
+
+### Configuration
+
+Rate limiting rules and settings are configured in your Elixir application's config files (e.g., `config/config.exs`, `config/prod.exs`). The configuration is provided under the `:mcpex` application, targeting the `Mcpex.RateLimiter.Server`.
+
+Example configuration:
+
+```elixir
+# In config/config.exs
+config :mcpex, Mcpex.RateLimiter.Server,
+  # GenServer process name (optional, defaults to Mcpex.RateLimiter.Server)
+  name: Mcpex.RateLimiter.Server, 
+  
+  # ETS table name used by ExRatedStrategy (optional, defaults to :mcpex_rate_limits_ets)
+  table_name: :mcpex_custom_rate_limits_ets, 
+  
+  # GC interval for the ETS table (optional, defaults to 5 minutes)
+  gc_interval: :timer.minutes(10),
+  
+  # Define rate limiting rules.
+  # Each map in the list should conform to ExRated.Rule structure if using default strategy.
+  rules: [
+    %{
+      id: :default_mcp_request,    # Rule ID used in the Router
+      limit: 100,                  # Max requests allowed for this rule
+      period: :timer.minutes(1),   # Time window in milliseconds (60,000 ms)
+      strategy: ExRated.Strategy.FixedWindow # Or other ExRated strategies
+    },
+    %{
+      id: :expensive_tool_call,    # A more restrictive rule for specific operations
+      limit: 10,
+      period: :timer.minutes(1),
+      strategy: ExRated.Strategy.FixedWindow
+    }
+    # Add more rules as needed for different MCP methods or contexts.
+  ]
+```
+
+The `Mcpex.Application` module loads this configuration when starting the `Mcpex.RateLimiter.Server`. If no configuration is provided, sensible defaults with a basic rule for `:default_mcp_request` are used (see `Mcpex.Application.start/2`).
+
+### Error Response
+
+When a client exceeds a configured rate limit, the `Mcpex.Router.handle_mcp_message/3` function will return a JSON-RPC error response. The specific error details are:
+
+*   **Code**: `-32029`
+*   **Message**: `"Too Many Requests"`
+*   **Data**: An object containing:
+    *   `message`: `"Too Many Requests. Rate limit exceeded."`
+    *   `retryAfterSeconds`: An integer indicating when the client might be able to retry.
+    *   `resetAt`: A Unix timestamp indicating when the limit window is expected to reset.
+
+Example error payload snippet:
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32029,
+    "message": "Too Many Requests",
+    "data": {
+      "message": "Too Many Requests. Rate limit exceeded.",
+      "retryAfterSeconds": 35,
+      "resetAt": 1678886435
+    }
+  },
+  "id": "your-request-id" 
+}
+```
+*(Note: The `id` in the response will match the `id` of the client's request if one was provided.)*
+
+### Extensibility
+
+The rate limiting system is designed to be extensible. To implement a new rate limiting strategy (e.g., using Redis, a different algorithm, or a third-party service):
+
+1.  Create a new module that implements the `Mcpex.RateLimiter.Behaviour`.
+2.  Update the configuration in `config/config.exs` to specify your new module as the `:strategy_module` for `Mcpex.RateLimiter.Server` and provide any necessary options for your new strategy.
+
+```elixir
+# Example: Using a hypothetical MyCustomStrategy
+config :mcpex, Mcpex.RateLimiter.Server,
+  strategy_module: Mcpex.RateLimiter.MyCustomStrategy,
+  my_custom_options: [...] 
+  # rules might be structured differently depending on MyCustomStrategy
+```
+
+This allows for significant flexibility in adapting the rate limiting approach as the application evolves.
+
 ## Testing Strategy
 
 ### Unit Tests
