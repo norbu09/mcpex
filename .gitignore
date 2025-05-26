@@ -39,3 +39,4 @@ npm-debug.log
 /elixir/
 /elixir-otp-27.zip
 
+.env
