@@ -43,7 +43,11 @@ defmodule Mcpex.Application do
     rate_limiter_opts = Keyword.merge(default_rate_limiter_config, rate_limiter_config_from_env)
 
     # Ensure the :name is set, as the router might depend on it.
-    rate_limiter_opts = Keyword.put_if_absent(rate_limiter_opts, :name, RateLimiterServer)
+    rate_limiter_opts = if Keyword.has_key?(rate_limiter_opts, :name) do
+      rate_limiter_opts
+    else
+      Keyword.put(rate_limiter_opts, :name, RateLimiterServer)
+    end
     
     Logger.info("Starting Mcpex.RateLimiter.Server with effective options: #{inspect(rate_limiter_opts)}")
 

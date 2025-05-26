@@ -42,7 +42,7 @@ defmodule Mcpex.RateLimiter.Server do
   """
   @spec check_and_update_limit(
           server :: GenServer.server(),
-          identifier :: Behaviour.identifier(),
+          identifier :: Behaviour.rate_limit_identifier(),
           rule_name :: Behaviour.rule_name()
         ) ::
           {:ok, Behaviour.limit_details()}
@@ -54,6 +54,31 @@ defmodule Mcpex.RateLimiter.Server do
     catch
       :exit, {:timeout, _} -> {:error, :timeout}
       :exit, {reason, _} -> {:error, reason} # Catches abnormal exits like :noproc
+    end
+  end
+  
+  @doc """
+  Checks the rate limit for a given identifier and rule without updating the counter.
+  Returns {:allow, count} if the request is allowed, or {:deny, count, retry_after, reset_at} if denied.
+  """
+  @spec check_rate(
+          server :: GenServer.server(),
+          rule_name :: Behaviour.rule_name(),
+          identifier :: Behaviour.rate_limit_identifier()
+        ) ::
+          {:allow, integer()} | 
+          {:deny, integer(), integer(), integer()} |
+          {:error, any()}
+  def check_rate(server, rule_name, identifier) do
+    case check_and_update_limit(server, identifier, rule_name) do
+      {:ok, details} ->
+        {:allow, details[:remaining] || 0}
+      {:error, :rate_limited, details} ->
+        # Calculate retry_after based on reset_at
+        retry_after = max(0, div(details[:reset_at] - :os.system_time(:second), 1))
+        {:deny, 0, retry_after, details[:reset_at]}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

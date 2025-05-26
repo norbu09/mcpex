@@ -17,7 +17,7 @@ defmodule Mcpex.RateLimiter.Behaviour do
   @opaque state :: any()
 
   @typedoc "An identifier for the entity being rate-limited (e.g., session ID, user ID, IP address)."
-  @type identifier :: String.t() | atom()
+  @type rate_limit_identifier :: String.t() | atom()
 
   @typedoc "The name of the rule or context for rate limiting (e.g., :api_request, :login_attempt)."
   @type rule_name :: atom()
@@ -57,7 +57,7 @@ defmodule Mcpex.RateLimiter.Behaviour do
     * `{:error, :rate_limited, new_state, details}`: If the request is denied due
       to rate limiting. `details` contains information like when to retry.
   """
-  @callback check_and_update_limit(state :: state(), identifier :: identifier(), rule_name :: rule_name()) ::
+  @callback check_and_update_limit(state :: state(), identifier :: rate_limit_identifier(), rule_name :: rule_name()) ::
               {:ok, new_state :: state(), details :: limit_details()}
               | {:error, :rate_limited, new_state :: state(), details :: limit_details()}
 end

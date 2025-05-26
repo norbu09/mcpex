@@ -3,14 +3,13 @@ defmodule Mcpex.RateLimiter.ServerTest do
 
   alias Mcpex.RateLimiter.Server
   alias Mcpex.RateLimiter.ExRatedStrategy # Default strategy used by Server
-  alias ExRated.Rule
 
   # Helper to start the server for tests
-  defp start_server(opts \ []) do
+  defp start_server(opts \\ []) do
     # Default rules for testing the GenServer
     default_rules = [
-      %Rule{id: :genserver_default, limit: 2, period: :timer.seconds(5), strategy: ExRated.Strategy.FixedWindow},
-      %Rule{id: :genserver_strict, limit: 1, period: :timer.seconds(5), strategy: ExRated.Strategy.FixedWindow}
+      %{id: :genserver_default, limit: 2, period: :timer.seconds(5), strategy: ExRated.Strategy.FixedWindow},
+      %{id: :genserver_strict, limit: 1, period: :timer.seconds(5), strategy: ExRated.Strategy.FixedWindow}
     ]
 
     # Default options, can be overridden by opts
@@ -82,7 +81,7 @@ defmodule Mcpex.RateLimiter.ServerTest do
 
       # user_gs_A uses :genserver_strict (limit 1)
       {:ok, _} = Server.check_and_update_limit(server_pid, "user_gs_A", :genserver_strict)
-      {:error, :rate_limited, _, _} = Server.check_and_update_limit(server_pid, "user_gs_A", :genserver_strict)
+      {:error, :rate_limited, details} = Server.check_and_update_limit(server_pid, "user_gs_A", :genserver_strict)
 
       # user_gs_B also uses :genserver_strict, should be independent
       {:ok, detailsB} = Server.check_and_update_limit(server_pid, "user_gs_B", :genserver_strict)
@@ -97,7 +96,7 @@ defmodule Mcpex.RateLimiter.ServerTest do
       assert elem(response, 0) == :error 
       # Specific error can be :noproc or whatever GenServer.call returns for bad server name
       # The catch block in RateLimiter.Server.check_and_update_limit should catch this.
-      assert response == {:error, :noproc} or response == {:error, {:noproc, _}}
+      assert response == {:error, :noproc} or match?({:error, {:noproc, _}}, response)
     end
 
     test "propagates unknown rule error from strategy", %{} do

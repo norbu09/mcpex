@@ -42,7 +42,175 @@ defmodule Mcpex.Router do
   alias Mcpex.Transport.{SSE, StreamableHttp}
   alias Mcpex.RateLimiter.Server, as: RateLimiterServer # New Alias
   alias Mcpex.Protocol.Errors # New Alias
+  
+  @doc """
+  Handle an MCP message with rate limiting.
+  
+  This function is used by the transport layers to process MCP messages.
+  It applies rate limiting based on the session ID and returns appropriate
+  responses or error messages.
+  
+  ## Parameters
+  
+  - `method` - The MCP method to call (e.g., "resources/list")
+  - `params` - The parameters for the method call
+  - `session_id` - The session ID for rate limiting
+  
+  ## Returns
+  
+  - `{:ok, response}` - The successful response
+  - `{:error, error}` - An error response
+  """
+  @spec handle_mcp_message(String.t(), map(), String.t()) :: 
+    {:ok, map()} | {:error, term()}
 
+  # Define the handle_mcp_message function
+  def handle_mcp_message(method, params, session_id) do
+    # Apply rate limiting
+    rate_limiter_server = Mcpex.RateLimiter.Server
+    rule_name = :default_mcp_request
+    
+    # Check if rate limiter is available
+    rate_limit_result = case Process.whereis(rate_limiter_server) do
+      nil ->
+        # Rate limiter not available, return error
+        {:error, :rate_limiter_unavailable}
+      _pid ->
+        # Check rate limit
+        RateLimiterServer.check_and_update_limit(rate_limiter_server, session_id, rule_name)
+    end
+    
+    case rate_limit_result do
+      {:ok, _details} ->
+        # Rate limit check passed, process the message
+        case method do
+          "resources/list" ->
+            # Return example resources
+            {:ok, %{
+              resources: [
+                %{
+                  uri: "file://example.txt",
+                  title: "Example Text File"
+                }
+              ]
+            }}
+            
+          "resources/get" ->
+            # Return example resource content
+            uri = Map.get(params, :uri)
+            Logger.info("Reading resource for session #{session_id} with params: #{inspect(params)}")
+            
+            case uri do
+              "file://example.txt" ->
+                {:ok, %{
+                  content: "This is an example text file."
+                }}
+                
+              _ ->
+                {:error, {:invalid_params, "Resource not found"}}
+            end
+            
+          "prompts/list" ->
+            # Return example prompts
+            {:ok, %{
+              prompts: [
+                %{
+                  name: "greeting",
+                  description: "A simple greeting prompt",
+                  arguments: [
+                    %{
+                      name: "name",
+                      description: "The name to greet",
+                      required: true
+                    }
+                  ]
+                }
+              ]
+            }}
+
+          "prompts/get" ->
+            case Map.get(params, :name) do
+              "greeting" ->
+                name = get_in(params, [:arguments, :name]) || "World"
+                {:ok, %{
+                  description: "A greeting prompt",
+                  messages: [
+                    %{
+                      role: "user",
+                      content: %{
+                        type: "text",
+                        text: "Hello, #{name}! How are you today?"
+                      }
+                    }
+                  ]
+                }}
+
+              _ ->
+                {:error, {:invalid_params, "Prompt not found"}}
+            end
+
+          "tools/list" ->
+            # Return example tools
+            {:ok, %{
+              tools: [
+                %{
+                  name: "echo",
+                  description: "Echo back the input text",
+                  inputSchema: %{
+                    type: "object",
+                    properties: %{
+                      text: %{
+                        type: "string",
+                        description: "Text to echo back"
+                      }
+                    },
+                    required: ["text"]
+                  }
+                }
+              ]
+            }}
+
+          "tools/call" ->
+            case Map.get(params, :name) do
+              "echo" ->
+                text = get_in(params, [:arguments, :text]) || ""
+                {:ok, %{
+                  content: [
+                    %{
+                      type: "text",
+                      text: "Echo: #{text}"
+                    }
+                  ]
+                }}
+
+              _ ->
+                {:error, {:invalid_params, "Tool not found"}}
+            end
+
+          _ ->
+            {:error, {:method_not_found, "Method not implemented: #{method}"}}
+        end
+        
+      {:error, :rate_limited, details} ->
+        Logger.warning("Rate limit exceeded for session #{session_id}, method: #{method}. Details: #{inspect(details)}")
+        # Return rate limit error
+        error_data = %{
+          message: "Too Many Requests. Rate limit exceeded.",
+          retryAfterSeconds: details.retry_after_seconds,
+          resetAt: details.reset_at
+        }
+        {:error, {:server_error, -32029, "Too Many Requests", error_data}}
+        
+      {:error, :rate_limiter_unavailable} ->
+        # Rate limiter not available
+        {:error, {:server_error, -32002, "Rate limiter unavailable", %{message: "Rate limiting service is unavailable"}}}
+        
+      {:error, reason} ->
+        # Other error
+        {:error, {:server_error, -32000, "Unknown error", %{message: "Error checking rate limit: #{inspect(reason)}"}}}
+    end
+  end
+  
   # Plug pipeline
   plug Plug.Logger
   plug :match
@@ -51,10 +219,10 @@ defmodule Mcpex.Router do
   # Session configuration using our custom MCP session store
   plug Plug.Session,
     store: Mcpex.Session.Store,
-    key: "_mcpex_session",
-    table: :mcpex_sessions
+    key: "mcpex_session",
+    signing_salt: "mcpex_salt"
 
-  # CORS support for development
+  # Enable CORS for all routes
   plug :cors_headers
 
   # Health check endpoint
@@ -62,212 +230,39 @@ defmodule Mcpex.Router do
     send_resp(conn, 200, "OK")
   end
 
-  # SSE Transport (Legacy MCP 2024-11-05)
+  # SSE transport endpoints
   post "/mcp/sse" do
-    SSE.call(conn, SSE.init(message_handler: &handle_mcp_message/3))
+    SSE.handle_request(conn)
   end
 
   get "/mcp/sse/stream" do
-    SSE.call(conn, SSE.init(message_handler: &handle_mcp_message/3))
+    SSE.handle_stream(conn)
   end
 
-  # Streamable HTTP Transport (Current MCP 2025-03-26)
+  # Streamable HTTP transport endpoints
   post "/mcp" do
-    StreamableHttp.call(conn, StreamableHttp.init(message_handler: &handle_mcp_message/3))
+    StreamableHttp.handle_request(conn)
   end
 
   get "/mcp/stream" do
-    StreamableHttp.call(conn, StreamableHttp.init(message_handler: &handle_mcp_message/3))
+    StreamableHttp.handle_stream(conn)
   end
 
-  # OPTIONS support for CORS
-  options "/mcp" do
+  # CORS preflight
+  options _ do
     send_resp(conn, 200, "")
   end
 
-  options "/mcp/sse" do
-    send_resp(conn, 200, "")
-  end
-
-  # Catch-all for undefined routes
+  # Catch-all route
   match _ do
     send_resp(conn, 404, "Not found")
   end
 
-  # Private functions
-
+  # Helper function to add CORS headers
   defp cors_headers(conn, _opts) do
     conn
     |> put_resp_header("access-control-allow-origin", "*")
     |> put_resp_header("access-control-allow-headers", "Content-Type, Mcp-Session-Id")
     |> put_resp_header("access-control-allow-methods", "GET, POST, OPTIONS")
-  end
-
-  # Example message handler - in a real application, this would be more sophisticated
-  # Note: This function is subject to rate limiting. See module doc for details.
-  defp handle_mcp_message(method, params, session_id) do
-    # Rate Limiting Check
-    # Assume RateLimiterServer is started under Mcpex.RateLimiter.Server name
-    # In a real app, this name might come from config or an application registry.
-    rate_limiter_process_name = Mcpex.RateLimiter.Server # Or a configured name
-
-    case RateLimiterServer.check_and_update_limit(rate_limiter_process_name, session_id, :default_mcp_request) do
-      {:ok, _details} ->
-        # Rate limit check passed, proceed with normal message handling
-        Logger.info("Rate limit check passed for session #{session_id}, method: #{method}")
-        # Original message handling logic starts here
-        Logger.info("Handling MCP message: #{method} for session #{session_id}")
-        Logger.debug("Parameters: #{inspect(params)}")
-
-        case method do
-          "resources/list" ->
-            # Return example resources
-            {:ok, %{
-          resources: [
-            %{
-              uri: "file://example.txt",
-              name: "Example File",
-              description: "An example text file",
-              mimeType: "text/plain"
-            }
-          ]
-        }}
-
-      "resources/read" ->
-        case Map.get(params, :uri) do
-          "file://example.txt" ->
-            {:ok, %{
-              contents: [
-                %{
-                  type: "text",
-                  text: "This is an example file content."
-                }
-              ]
-            }}
-
-          _ ->
-            {:error, {:invalid_params, "Resource not found"}}
-        end
-
-      "prompts/list" ->
-        # Return example prompts
-        {:ok, %{
-          prompts: [
-            %{
-              name: "greeting",
-              description: "A simple greeting prompt",
-              arguments: [
-                %{
-                  name: "name",
-                  description: "The name to greet",
-                  required: true
-                }
-              ]
-            }
-          ]
-        }}
-
-      "prompts/get" ->
-        case Map.get(params, :name) do
-          "greeting" ->
-            name = get_in(params, [:arguments, :name]) || "World"
-            {:ok, %{
-              description: "A greeting prompt",
-              messages: [
-                %{
-                  role: "user",
-                  content: %{
-                    type: "text",
-                    text: "Hello, #{name}! How are you today?"
-                  }
-                }
-              ]
-            }}
-
-          _ ->
-            {:error, {:invalid_params, "Prompt not found"}}
-        end
-
-      "tools/list" ->
-        # Return example tools
-        {:ok, %{
-          tools: [
-            %{
-              name: "echo",
-              description: "Echo back the input text",
-              inputSchema: %{
-                type: "object",
-                properties: %{
-                  text: %{
-                    type: "string",
-                    description: "Text to echo back"
-                  }
-                },
-                required: ["text"]
-              }
-            }
-          ]
-        }}
-
-      "tools/call" ->
-        case Map.get(params, :name) do
-          "echo" ->
-            text = get_in(params, [:arguments, :text]) || ""
-            {:ok, %{
-              content: [
-                %{
-                  type: "text",
-                  text: "Echo: #{text}"
-                }
-              ]
-            }}
-
-          _ ->
-            {:error, {:invalid_params, "Tool not found"}}
-        end
-
-      _ ->
-        {:error, {:method_not_found, "Method not implemented: #{method}"}}
-    end
-        # End of original message handling logic
-
-      {:error, :rate_limited, details} ->
-        Logger.warn("Rate limit exceeded for session #{session_id}, method: #{method}. Details: #{inspect(details)}")
-        # MCP protocol expects error responses in a specific format.
-        # Using a custom error code for rate limiting, e.g., -32029
-        # The `id` for the error response should ideally match the request `id` if available.
-        # However, `handle_mcp_message` doesn't receive the request `id` directly.
-        # The transport layer (`sse.ex`, `streamable_http.ex`) adds the `id` to the response.
-        # So, we return an error tuple that the transport layer can convert.
-        error_data = %{
-          message: "Too Many Requests. Rate limit exceeded.",
-          retryAfterSeconds: details.retry_after_seconds,
-          resetAt: details.reset_at
-        }
-        # Using a custom error type :rate_limit_exceeded, which Errors.normalize_error can handle
-        # if we define it there, or a generic one for now.
-        # Let's use a structure that Errors.normalize_error can understand or extend.
-        # For now, :server_error with a specific code.
-        # The `Errors.normalize_error` function might need adjustment if we want a very specific code.
-        # Let's use a tuple that can be somewhat descriptive for Errors.normalize_error.
-        {:error, {:server_error, -32029, "Too Many Requests", error_data}}
-
-
-      {:error, :timeout} ->
-        Logger.error("Rate limiter GenServer call timed out for session #{session_id}, method: #{method}.")
-        # Fail open or closed? For now, let's fail open but log an error.
-        # This indicates a problem with the rate limiter itself.
-        # Proceeding as if passed, but this should be monitored.
-        # Alternatively, return a specific server error.
-        {:error, {:server_error, -32001, "Rate limiter timeout", %{}}}
-
-
-      {:error, reason} -> # Other GenServer call errors (e.g., :noproc if not started)
-        Logger.error("Rate limiter error for session #{session_id}, method: #{method}. Reason: #{inspect(reason)}")
-        # Fail open or closed? Similar to timeout, this is an issue with the limiter.
-        # Let's return a server error.
-        {:error, {:server_error, -32002, "Rate limiter unavailable", %{reason: inspect(reason)}}}
-
-    end
   end
 end

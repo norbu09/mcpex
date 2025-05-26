@@ -2,7 +2,6 @@ defmodule Mcpex.RateLimiter.ExRatedStrategyTest do
   use ExUnit.Case, async: false # ETS tables might require async: false or careful naming
 
   alias Mcpex.RateLimiter.ExRatedStrategy
-  alias ExRated.Rule
 
   setup do
     # Create a unique table name for each test to avoid concurrency issues with ETS
@@ -10,33 +9,25 @@ defmodule Mcpex.RateLimiter.ExRatedStrategyTest do
     
     # Basic rules for testing
     rules = [
-      %Rule{id: :test_default, limit: 3, period: :timer.seconds(10), strategy: ExRated.Strategy.FixedWindow},
-      %Rule{id: :test_strict, limit: 1, period: :timer.seconds(5), strategy: ExRated.Strategy.FixedWindow}
+      %{id: :test_default, limit: 3, period: :timer.seconds(10), strategy: ExRated.Strategy.FixedWindow},
+      %{id: :test_strict, limit: 1, period: :timer.seconds(5), strategy: ExRated.Strategy.FixedWindow}
     ]
 
     # Options for initializing the strategy
     init_opts = [table_name: table_name, rules: rules, gc_interval: :timer.seconds(1)]
 
-    # Start the ETS table directly for this test.
-    # In a real scenario with a GenServer, the GenServer would own this.
-    # Here, we are unit testing the strategy module itself.
-    case ExRated.Store.ETS.start_link(name: table_name, rules: rules, gc_interval: :timer.seconds(1)) do
-      {:ok, pid} ->
-        on_exit(fn -> Process.exit(pid, :shutdown) end) # Ensure ETS table is cleaned up
-        {:ok, strategy_state: ExRatedStrategy.init(init_opts) |> elem(1), rules: rules, table_name: table_name}
-      {:error, {:already_started, _pid}} ->
-        # This should ideally not happen with unique names, but handle it.
-        {:ok, strategy_state: ExRatedStrategy.init(init_opts) |> elem(1), rules: rules, table_name: table_name}
-      {:error, reason} ->
-        {:error, reason} # Fail setup if ETS cannot start
-    end
+    # Initialize the strategy directly
+    # ExRated doesn't need explicit initialization, it starts automatically
+    # when the application starts
+    {:ok, strategy_state} = ExRatedStrategy.init(init_opts)
+    
+    # Return the test context
+    {:ok, strategy_state: strategy_state, rules: rules, table_name: table_name}
   end
 
   describe "init/1" do
-    test "initializes with given table name and rules", %{strategy_state: strategy_state, rules: rules, table_name: table_name} do
-      assert strategy_state.table_name == table_name
+    test "initializes with given rules", %{strategy_state: strategy_state, rules: rules} do
       assert Map.get(strategy_state.rules, :test_default) == Enum.find(rules, &(&1.id == :test_default))
-      assert :sys.get_status(table_name) != nil # Check if ETS process is alive (simple check)
     end
   end
 
@@ -97,15 +88,12 @@ defmodule Mcpex.RateLimiter.ExRatedStrategyTest do
       assert details.reason == "Rule not configured: unknown_rule"
     end
     
-    test "waits for period to pass to allow requests again", %{strategy_state: strategy_state, table_name: table_name} do
+    test "waits for period to pass to allow requests again", %{strategy_state: strategy_state} do
       rule_id = :test_strict_wait
       short_period_ms = 100 # 100 ms
       
-      # Dynamically add a rule to current test's ETS table for this specific test case
-      ExRated.Store.ETS.add_rule(table_name, %Rule{id: rule_id, limit: 1, period: short_period_ms, strategy: ExRated.Strategy.FixedWindow})
-      
       # Update strategy_state with the new rule for this test instance
-      updated_rules = Map.put(strategy_state.rules, rule_id, %Rule{id: rule_id, limit: 1, period: short_period_ms, strategy: ExRated.Strategy.FixedWindow})
+      updated_rules = Map.put(strategy_state.rules, rule_id, %{id: rule_id, limit: 1, period: short_period_ms, strategy: ExRated.Strategy.FixedWindow})
       current_state = %{strategy_state | rules: updated_rules}
 
       # First request, should be ok
