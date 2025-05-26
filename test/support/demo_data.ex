@@ -1,4 +1,4 @@
-defmodule Mcpex.DemoData do
+defmodule Mcpex.TestSupport.DemoData do
   @moduledoc """
   Demo data for testing and examples.
   
