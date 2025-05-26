@@ -22,7 +22,7 @@ defmodule Mcpex.MixProject do
   # Run "mix help deps" to learn about dependencies.
     defp deps do
     [
-      # JSON handling
+      # JSON handling (temporary until Elixir 1.18)
       {:jason, "~> 1.4"},
 
       # Schema validation

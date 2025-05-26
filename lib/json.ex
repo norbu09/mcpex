@@ -1,54 +1,116 @@
+defmodule JSON.DecodeError do
+  @moduledoc """
+  Error raised when JSON decoding fails.
+  """
+  defexception [:reason]
+
+  @impl true
+  def message(%__MODULE__{reason: reason}) do
+    "JSON decode error: #{inspect(reason)}"
+  end
+end
+
+defmodule JSON.EncodeError do
+  @moduledoc """
+  Error raised when JSON encoding fails.
+  """
+  defexception [:reason]
+
+  @impl true
+  def message(%__MODULE__{reason: reason}) do
+    "JSON encode error: #{inspect(reason)}"
+  end
+end
+
 defmodule JSON do
   @moduledoc """
-  A wrapper around Jason to simulate the built-in JSON module in Elixir 1.18.
-  
-  This module provides the same interface as the built-in JSON module in Elixir 1.18,
-  but delegates to Jason for the actual implementation.
+  A wrapper around Jason for JSON encoding and decoding.
+
+  This module is intended to be used as a temporary solution until the project
+  can be migrated to Elixir 1.18, which includes a built-in JSON module.
+
+  Once the project is migrated to Elixir 1.18, this module should be removed
+  and all references should use the built-in JSON module.
   """
 
   @doc """
-  Encodes an Elixir value into a JSON string.
+  Decodes a JSON string into an Elixir term.
+
+  ## Examples
+
+      iex> JSON.decode(~s({"name": "John"}))
+      {:ok, %{"name" => "John"}}
+
+      iex> JSON.decode("invalid")
+      {:error, %JSON.DecodeError{}}
   """
-  @spec encode(term) :: {:ok, String.t()} | {:error, Jason.EncodeError.t()}
-  def encode(value) do
-    Jason.encode(value)
+  def decode(json) do
+    case Jason.decode(json) do
+      {:ok, result} -> {:ok, result}
+      {:error, error} -> {:error, %JSON.DecodeError{reason: error.data}}
+    end
   end
 
   @doc """
-  Encodes an Elixir value into a JSON string, raising an exception on error.
+  Decodes a JSON string into an Elixir term, raising an exception on error.
+
+  ## Examples
+
+      iex> JSON.decode!(~s({"name": "John"}))
+      %{"name" => "John"}
   """
-  @spec encode!(term) :: String.t() | no_return
-  def encode!(value) do
-    Jason.encode!(value)
+  def decode!(json) do
+    Jason.decode!(json)
   end
 
   @doc """
-  Decodes a JSON string into an Elixir value.
+  Encodes an Elixir term into a JSON string.
+
+  ## Examples
+
+      iex> JSON.encode(%{name: "John"})
+      {:ok, ~s({"name":"John"})}
   """
-  @spec decode(String.t()) :: {:ok, term} | {:error, Jason.DecodeError.t()}
-  def decode(string) do
-    Jason.decode(string)
+  def encode(term) do
+    case Jason.encode(term) do
+      {:ok, result} -> {:ok, result}
+      {:error, error} -> {:error, %JSON.EncodeError{reason: error}}
+    end
   end
 
   @doc """
-  Decodes a JSON string into an Elixir value, raising an exception on error.
+  Encodes an Elixir term into a JSON string, raising an exception on error.
+
+  ## Examples
+
+      iex> JSON.encode!(%{name: "John"})
+      ~s({"name":"John"})
   """
-  @spec decode!(String.t()) :: term | no_return
-  def decode!(string) do
-    Jason.decode!(string)
+  def encode!(term) do
+    Jason.encode!(term)
   end
+end
 
-  defmodule DecodeError do
-    @moduledoc """
-    Error raised when JSON decoding fails.
-    """
-    defexception [:message]
+defmodule JSON.DecodeError do
+  @moduledoc """
+  Error raised when JSON decoding fails.
+  """
+  defexception [:reason]
+
+  @impl true
+  def message(%__MODULE__{reason: reason}) do
+    "JSON decode error: #{inspect(reason)}"
   end
+end
 
-  defmodule EncodeError do
-    @moduledoc """
-    Error raised when JSON encoding fails.
-    """
-    defexception [:message]
+defmodule JSON.EncodeError do
+  @moduledoc """
+  Error raised when JSON encoding fails.
+  """
+  defexception [:reason]
+
+  @impl true
+  def message(%__MODULE__{reason: reason}) do
+    "JSON encode error: #{inspect(reason)}"
   end
 end

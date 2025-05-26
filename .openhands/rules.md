@@ -23,6 +23,8 @@ MCPEX is an Elixir implementation of the Machine Chat Protocol (MCP). The projec
    - Document with `@moduledoc`, `@doc`, `@spec`
    - Keep documentation up-to-date with code changes
    - Update README.md when adding significant features
+   - Always read the entire docs/ folder before starting any task
+   - Track progress and decisions in the docs/ folder
 
 4. **Testing**:
    - Write comprehensive ExUnit tests for all new functionality
