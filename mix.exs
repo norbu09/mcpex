@@ -5,7 +5,7 @@ defmodule Mcpex.MixProject do
     [
       app: :mcpex,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -22,9 +22,6 @@ defmodule Mcpex.MixProject do
   # Run "mix help deps" to learn about dependencies.
     defp deps do
     [
-      # JSON handling (temporary until Elixir 1.18)
-      {:jason, "~> 1.4"},
-
       # Schema validation
       {:ex_json_schema, "~> 0.10"},
 
