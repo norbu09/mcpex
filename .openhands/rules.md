@@ -6,7 +6,7 @@ MCPEX is an Elixir implementation of the Machine Chat Protocol (MCP). The projec
 
 ## Technical Guidelines
 
-1. **JSON Usage**: 
+1. **JSON Usage**:
    - Always use the built-in `JSON` module for all JSON operations
    - Do not add Jason or other JSON libraries as dependencies
    - Refer to `docs/json_usage.md` for detailed guidelines
@@ -36,8 +36,10 @@ MCPEX is an Elixir implementation of the Machine Chat Protocol (MCP). The projec
 1. **Development Process**:
    - Start with small, simple solutions
    - Design at a high level before implementation
+   - Document your implementation plan in `docs/`
    - Frequently ask for feedback and clarification
    - Use feature flags for new functionality with `:fun_with_flags`
+   - Update your implementation documentation regularly
 
 2. **Git Workflow**:
    - Create meaningful branch names that describe changes
@@ -58,6 +60,7 @@ MCPEX is an Elixir implementation of the Machine Chat Protocol (MCP). The projec
    - Provide multiple options when appropriate
 
 2. **Progress Updates**:
+   - Allcommunication is through Github Issues, PRs or by documenting them in the `docs/` folder
    - Provide clear summaries of completed work
    - Highlight any challenges or blockers
    - Suggest next steps based on current progress
@@ -83,3 +86,4 @@ MCPEX is an Elixir implementation of the Machine Chat Protocol (MCP). The projec
    - Consider performance implications of changes
    - Use Elixir's concurrency features appropriately
    - Optimize critical paths when necessary
+

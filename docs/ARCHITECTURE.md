@@ -14,6 +14,7 @@ The Model Context Protocol enables AI assistants to securely access external dat
    - **Streamable HTTP**: Current transport from protocol version 2025-03-26
 
 Both remote transports use JSON-RPC 2.0 for message exchange and support core MCP capabilities:
+
 - **Resources**: Provide data and content to clients
 - **Prompts**: Template management for AI interactions  
 - **Tools**: Executable functions clients can call
@@ -24,24 +25,28 @@ Both remote transports use JSON-RPC 2.0 for message exchange and support core MC
 ### Core Components
 
 #### 1. Protocol Layer
+
 - JSON-RPC 2.0 message handling (requests, responses, notifications, errors)
 - Message validation and schema enforcement
 - Request/response correlation
 - Error handling with proper MCP error codes
 
 #### 2. Transport Layer
+
 - **SSE Transport**: HTTP POST for client-to-server, SSE for server-to-client
 - **Streamable HTTP Transport**: HTTP POST for client-to-server, optional SSE streams for server-to-client
 - Session management with `Mcp-Session-Id` headers
 - Connection lifecycle management
 
 #### 3. Server Core
+
 - Initialization handshake (`initialize` → `initialized`)
 - Capability negotiation
 - Request routing and handler registration
 - Progress reporting for long-running operations
 
 #### 4. MCP Features
+
 - **Resources**: Provide data and content to clients
 - **Prompts**: Template management for AI interactions  
 - **Tools**: Executable functions clients can call
@@ -50,6 +55,7 @@ Both remote transports use JSON-RPC 2.0 for message exchange and support core MC
 ## Technology Stack
 
 ### Core Dependencies
+
 ```elixir
 defp deps do
   [
@@ -80,6 +86,7 @@ end
 ```
 
 ### Project Structure
+
 ```
 lib/mcpex/
 ├── server.ex                    # Main server GenServer
@@ -109,6 +116,7 @@ lib/mcpex/
 ## API Design
 
 ### Server Configuration
+
 ```elixir
 defmodule MyApp.MCPServer do
   use Mcpex.Server
@@ -126,14 +134,14 @@ defmodule MyApp.MCPServer do
   end
 
   # Resource handlers
-  def handle_list_resources(_params, state) do
+  def handle_call(:resource_list, _params, state) do
     resources = [
       %{uri: "file://example.txt", name: "Example File", mimeType: "text/plain"}
     ]
     {:ok, %{resources: resources}, state}
   end
 
-  def handle_read_resource(%{uri: uri}, state) do
+  def handle_call(:resource, %{uri: uri, type: :read}, state) do
     case File.read(uri) do
       {:ok, content} -> 
         {:ok, %{contents: [%{uri: uri, text: content}]}, state}
@@ -143,7 +151,7 @@ defmodule MyApp.MCPServer do
   end
 
   # Tool handlers
-  def handle_call_tool(%{name: "hello", arguments: args}, state) do
+  def handle_call(:tool, %{name: "hello", arguments: args}, state) do
     name = Map.get(args, "name", "World")
     {:ok, %{content: [%{type: "text", text: "Hello, #{name}!"}]}, state}
   end
@@ -151,6 +159,7 @@ end
 ```
 
 ### Transport Startup
+
 ```elixir
 # For SSE transport
 {:ok, _pid} = Mcpex.Transport.SSE.start_link(
@@ -178,18 +187,21 @@ end
 ## Testing Strategy
 
 ### Unit Tests
+
 - JSON-RPC message parsing and generation
 - Schema validation for all MCP message types
 - Error handling and edge cases
 - Session management lifecycle
 
 ### Integration Tests
+
 - Full client-server communication flows
 - Transport-specific behavior (SSE vs Streamable HTTP)
 - Capability negotiation
 - Long-running operations with progress reporting
 
 ### Interoperability Tests
+
 We can test interoperability with existing MCP clients:
 
 1. **Claude Desktop App**: Test local connections
@@ -198,6 +210,7 @@ We can test interoperability with existing MCP clients:
 4. **Custom test clients**: Build simple Elixir clients for automated testing
 
 ### Test Client Implementation
+
 ```elixir
 defmodule Mcpex.TestClient do
   @moduledoc "Simple MCP client for testing interoperability"
@@ -218,4 +231,5 @@ end
 
 ## Development Phases
 
-See [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) for detailed implementation phases. 
+See [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) for detailed implementation phases.
+
