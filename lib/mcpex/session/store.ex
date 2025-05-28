@@ -57,6 +57,7 @@ defmodule Mcpex.Session.Store do
   def put(_conn, nil, session_data, table_name) do
     # Create new session
     session_id = generate_session_id()
+
     mcp_data = %{
       transport: :unknown,
       created_at: DateTime.utc_now(),
@@ -139,6 +140,7 @@ defmodule Mcpex.Session.Store do
       capabilities: capabilities,
       initialized: true
     }
+
     update_mcp_session(session_id, updates, table_name)
   end
 

@@ -87,6 +87,7 @@ defmodule Mcpex.Session.Manager do
       capabilities: capabilities,
       initialized: true
     }
+
     update_session(session_id, updates)
   end
 

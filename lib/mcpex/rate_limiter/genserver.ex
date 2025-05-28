@@ -25,7 +25,8 @@ defmodule Mcpex.RateLimiter.Server do
   use GenServer
 
   alias Mcpex.RateLimiter.Behaviour
-  alias Mcpex.RateLimiter.ExRatedStrategy # Default strategy
+  # Default strategy
+  alias Mcpex.RateLimiter.ExRatedStrategy
 
   # Client API
 
@@ -53,10 +54,11 @@ defmodule Mcpex.RateLimiter.Server do
       GenServer.call(server, {:check_and_update_limit, identifier, rule_name}, :timer.seconds(5))
     catch
       :exit, {:timeout, _} -> {:error, :timeout}
-      :exit, {reason, _} -> {:error, reason} # Catches abnormal exits like :noproc
+      # Catches abnormal exits like :noproc
+      :exit, {reason, _} -> {:error, reason}
     end
   end
-  
+
   @doc """
   Checks the rate limit for a given identifier and rule without updating the counter.
   Returns {:allow, count} if the request is allowed, or {:deny, count, retry_after, reset_at} if denied.
@@ -66,17 +68,19 @@ defmodule Mcpex.RateLimiter.Server do
           rule_name :: Behaviour.rule_name(),
           identifier :: Behaviour.rate_limit_identifier()
         ) ::
-          {:allow, integer()} | 
-          {:deny, integer(), integer(), integer()} |
-          {:error, any()}
+          {:allow, integer()}
+          | {:deny, integer(), integer(), integer()}
+          | {:error, any()}
   def check_rate(server, rule_name, identifier) do
     case check_and_update_limit(server, identifier, rule_name) do
       {:ok, details} ->
         {:allow, details[:remaining] || 0}
+
       {:error, :rate_limited, details} ->
         # Calculate retry_after based on reset_at
         retry_after = max(0, div(details[:reset_at] - :os.system_time(:second), 1))
         {:deny, 0, retry_after, details[:reset_at]}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -88,7 +92,7 @@ defmodule Mcpex.RateLimiter.Server do
   def init(init_opts) do
     # Default to ExRatedStrategy if no strategy_module is provided
     strategy_module = Keyword.get(init_opts, :strategy_module, ExRatedStrategy)
-    
+
     # Prepare options for the strategy module's init function
     # Rules should be passed in init_opts, e.g., rules: [%{id: :default, ...}]
     strategy_opts = Keyword.take(init_opts, [:rules, :table_name, :gc_interval])
@@ -96,6 +100,7 @@ defmodule Mcpex.RateLimiter.Server do
     case strategy_module.init(strategy_opts) do
       {:ok, strategy_state} ->
         {:ok, %{strategy_module: strategy_module, strategy_state: strategy_state}}
+
       {:error, reason} ->
         {:stop, {:failed_to_initialize_strategy, reason}}
     end
@@ -113,10 +118,11 @@ defmodule Mcpex.RateLimiter.Server do
       {:error, :rate_limited, new_strategy_state, details} ->
         reply = {:error, :rate_limited, details}
         {:reply, reply, %{state | strategy_state: new_strategy_state}}
-      
+
       # Catch any other error from the strategy (e.g. misconfigured rule)
       {:error, error_type, new_strategy_state, details} ->
-        reply = {:error, error_type, details} # Propagate the error type
+        # Propagate the error type
+        reply = {:error, error_type, details}
         {:reply, reply, %{state | strategy_state: new_strategy_state}}
     end
   end

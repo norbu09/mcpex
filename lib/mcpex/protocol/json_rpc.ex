@@ -96,7 +96,7 @@ defmodule Mcpex.Protocol.JsonRpc do
     }
   end
 
-    @doc """
+  @doc """
   Creates a JSON-RPC 2.0 error response message.
 
   ## Examples
@@ -111,23 +111,26 @@ defmodule Mcpex.Protocol.JsonRpc do
         id: "1"
       }
   """
-  @spec error_response(id(), {integer(), String.t(), error_data()} | integer()) :: error_response()
+  @spec error_response(id(), {integer(), String.t(), error_data()} | integer()) ::
+          error_response()
   def error_response(id, {code, message, data}) do
     error_response(code, message, data, id)
   end
-  
+
   def error_response(id, code) when is_integer(code) do
     message = Mcpex.Protocol.Errors.error_message(code)
     error_response(code, message, nil, id)
   end
-  
+
   @spec error_response(integer(), String.t(), error_data(), id()) :: error_response()
   def error_response(code, message, data \\ nil, id) do
-    error = %{
-      code: code,
-      message: message,
-      data: data
-    } |> remove_nil_values()
+    error =
+      %{
+        code: code,
+        message: message,
+        data: data
+      }
+      |> remove_nil_values()
 
     %{
       jsonrpc: @jsonrpc_version,
@@ -135,8 +138,6 @@ defmodule Mcpex.Protocol.JsonRpc do
       id: id
     }
   end
-  
-
 
   @doc """
   Creates a JSON-RPC 2.0 notification message.
@@ -175,7 +176,7 @@ defmodule Mcpex.Protocol.JsonRpc do
       iex> Mcpex.Protocol.JsonRpc.parse("invalid json")
       {:error, {:parse_error, "Invalid JSON"}}
   """
-  @spec parse(String.t()) :: {:ok, message() | [message()]} | {:error, {atom(), String.t()}}
+  @spec parse(String.t() | map()) :: {:ok, message() | [message()]} | {:error, {atom(), String.t()}}
   def parse(json_string) when is_binary(json_string) do
     try do
       data = JSON.decode!(json_string)
@@ -185,8 +186,13 @@ defmodule Mcpex.Protocol.JsonRpc do
       _e -> {:error, {:parse_error, "Invalid JSON"}}
     end
   end
+  
+  def parse(message) when is_map(message) do
+    # If the message is already a map, just validate it
+    validate_message(message)
+  end
 
-    @doc """
+  @doc """
   Encodes a JSON-RPC message or batch of messages to a JSON string.
 
   ## Examples
@@ -224,6 +230,7 @@ defmodule Mcpex.Protocol.JsonRpc do
   def notification?(%{method: method} = msg) when is_binary(method) do
     not Map.has_key?(msg, :id)
   end
+
   def notification?(_), do: false
 
   @doc """
@@ -233,6 +240,7 @@ defmodule Mcpex.Protocol.JsonRpc do
   def response?(%{id: id} = msg) when not is_nil(id) do
     Map.has_key?(msg, :result) or Map.has_key?(msg, :error)
   end
+
   def response?(_), do: false
 
   @doc """
@@ -259,6 +267,7 @@ defmodule Mcpex.Protocol.JsonRpc do
       case Enum.map(data, &validate_single_message/1) do
         results when is_list(results) ->
           errors = Enum.filter(results, &match?({:error, _}, &1))
+
           if Enum.empty?(errors) do
             messages = Enum.map(results, fn {:ok, msg} -> msg end)
             {:ok, messages}
@@ -275,6 +284,11 @@ defmodule Mcpex.Protocol.JsonRpc do
 
   defp validate_message(_) do
     {:error, {:invalid_request, "Message must be an object or array"}}
+  end
+
+  defp validate_single_message(%{jsonrpc: "2.0"} = message) do
+    # Map already has atom keys, use it directly
+    validate_message_structure(message)
   end
 
   defp validate_single_message(%{"jsonrpc" => "2.0"} = data) do
@@ -296,6 +310,14 @@ defmodule Mcpex.Protocol.JsonRpc do
           end
       end
 
+    validate_message_structure(message)
+  end
+
+  defp validate_single_message(_) do
+    {:error, {:invalid_request, "Missing jsonrpc version 2.0"}}
+  end
+
+  defp validate_message_structure(message) do
     cond do
       # Request: has method and id
       Map.has_key?(message, :method) and Map.has_key?(message, :id) ->
@@ -314,7 +336,8 @@ defmodule Mcpex.Protocol.JsonRpc do
         end
 
       # Response: has result or error, and id
-      (Map.has_key?(message, :result) or Map.has_key?(message, :error)) and Map.has_key?(message, :id) ->
+      (Map.has_key?(message, :result) or Map.has_key?(message, :error)) and
+          Map.has_key?(message, :id) ->
         cond do
           Map.has_key?(message, :result) and Map.has_key?(message, :error) ->
             {:error, {:invalid_request, "Response cannot have both result and error"}}
@@ -331,10 +354,6 @@ defmodule Mcpex.Protocol.JsonRpc do
     end
   end
 
-  defp validate_single_message(_) do
-    {:error, {:invalid_request, "Missing jsonrpc version 2.0"}}
-  end
-
   defp validate_error_object(error, message) when is_map(error) do
     # Handle both atom and string keys
     code = Map.get(error, :code) || Map.get(error, "code")
@@ -348,10 +367,11 @@ defmodule Mcpex.Protocol.JsonRpc do
       }
 
       # Add data if present
-      normalized_error = case Map.get(error, :data) || Map.get(error, "data") do
-        nil -> normalized_error
-        data -> Map.put(normalized_error, :data, data)
-      end
+      normalized_error =
+        case Map.get(error, :data) || Map.get(error, "data") do
+          nil -> normalized_error
+          data -> Map.put(normalized_error, :data, data)
+        end
 
       {:ok, %{message | error: normalized_error}}
     else

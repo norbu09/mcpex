@@ -29,14 +29,16 @@ defmodule Mcpex.RateLimiter.ExRatedStrategy do
   @impl Behaviour
   def init(opts) do
     rules = Keyword.get(opts, :rules, [])
-    
+
     # ExRated doesn't need explicit initialization, it starts automatically
     # when the application starts. We'll just store the rules for later use.
-    
+
     Logger.info("ExRated strategy initialized with rules: #{inspect(rules)}")
+
     state = %{
-      rules: Enum.into(rules, %{}, fn rule -> {rule.id, rule} end) 
+      rules: Enum.into(rules, %{}, fn rule -> {rule.id, rule} end)
     }
+
     {:ok, state}
   end
 
@@ -45,32 +47,38 @@ defmodule Mcpex.RateLimiter.ExRatedStrategy do
     rule_config = Map.get(state.rules, rule_name)
 
     if is_nil(rule_config) do
-      Logger.warning("Rate limiting rule_name '#{rule_name}' not found in ExRatedStrategy configuration.")
+      Logger.warning(
+        "Rate limiting rule_name '#{rule_name}' not found in ExRatedStrategy configuration."
+      )
+
       {:ok, state, %{reason: "Rule not configured: #{rule_name}"}}
     else
       # Extract period and limit from the rule config
       period_ms = rule_config.period
       limit = rule_config.limit
-      
+
       # Convert identifier to string as required by ExRated
       string_identifier = to_string(identifier)
-      
+
       # Use ExRated.check_rate/3 to check if the request is allowed
       bucket_name = "#{to_string(rule_name)}_#{string_identifier}"
+
       case ExRated.check_rate(bucket_name, period_ms, limit) do
         {:ok, count} ->
           remaining = if limit - count < 0, do: 0, else: limit - count
-          
+
           # Calculate reset time (when the current window expires)
           current_os_time_ms = System.os_time(:millisecond)
           # This calculation assumes windows are aligned with Unix epoch
           reset_at_timestamp_ms = (div(current_os_time_ms, period_ms) + 1) * period_ms
-          
+
           details = %{
             remaining: remaining,
             limit: limit,
-            reset_at: div(reset_at_timestamp_ms, 1000) # Convert to seconds
+            # Convert to seconds
+            reset_at: div(reset_at_timestamp_ms, 1000)
           }
+
           {:ok, state, details}
 
         {:error, _limit} ->
@@ -83,6 +91,7 @@ defmodule Mcpex.RateLimiter.ExRatedStrategy do
             retry_after_seconds: retry_after_seconds,
             reset_at: reset_at_timestamp
           }
+
           {:error, :rate_limited, state, details}
       end
     end

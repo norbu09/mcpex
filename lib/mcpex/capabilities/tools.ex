@@ -74,7 +74,9 @@ defmodule Mcpex.Capabilities.Tools do
   end
 
   defp handle_cancel(params, session_id) do
-    Logger.info("Cancelling tool execution for session #{session_id} with params: #{inspect(params)}")
+    Logger.info(
+      "Cancelling tool execution for session #{session_id} with params: #{inspect(params)}"
+    )
 
     execution_id = Map.get(params, "executionId")
 
@@ -103,7 +105,9 @@ defmodule Mcpex.Capabilities.Tools do
   end
 
   defp handle_unsubscribe(params, session_id) do
-    Logger.info("Unsubscribing from tools for session #{session_id} with params: #{inspect(params)}")
+    Logger.info(
+      "Unsubscribing from tools for session #{session_id} with params: #{inspect(params)}"
+    )
 
     subscription_id = Map.get(params, "subscriptionId")
 
@@ -135,6 +139,7 @@ defmodule Mcpex.Capabilities.Tools do
           nil -> {:error, "Unknown tool: #{name}"}
           executor when is_function(executor) -> executor.(arguments)
         end
+
       _ ->
         {:error, "No tool executors found"}
     end

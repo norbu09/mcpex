@@ -14,7 +14,8 @@ defmodule Mcpex.Transport.BehaviourTest do
     end
 
     test "returns error for invalid JSON" do
-      assert {:error, {:parse_error, "Invalid JSON"}} = Behaviour.parse_json_rpc_message("invalid json")
+      assert {:error, {:parse_error, "Invalid JSON"}} =
+               Behaviour.parse_json_rpc_message("invalid json")
     end
   end
 
@@ -88,7 +89,10 @@ defmodule Mcpex.Transport.BehaviourTest do
 
       assert conn.status == 200
       assert conn.state == :sent
-      assert Plug.Conn.get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
+
+      assert Plug.Conn.get_resp_header(conn, "content-type") == [
+               "application/json; charset=utf-8"
+             ]
 
       {:ok, parsed} = JSON.decode(conn.resp_body)
       assert parsed["message"] == "test"
@@ -115,7 +119,11 @@ defmodule Mcpex.Transport.BehaviourTest do
 
       assert conn.status == 200
       assert conn.state == :sent
-      assert Plug.Conn.get_resp_header(conn, "content-type") == ["text/event-stream; charset=utf-8"]
+
+      assert Plug.Conn.get_resp_header(conn, "content-type") == [
+               "text/event-stream; charset=utf-8"
+             ]
+
       assert Plug.Conn.get_resp_header(conn, "cache-control") == ["no-cache"]
       assert Plug.Conn.get_resp_header(conn, "connection") == ["keep-alive"]
       assert conn.resp_body == "data: test data\n\n"
