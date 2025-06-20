@@ -1,5 +1,6 @@
 defmodule Mcpex.Transport.StreamableHttpTest do
-  use ExUnit.Case, async: false  # Not async due to session store
+  # Not async due to session store
+  use ExUnit.Case, async: false
 
   alias Mcpex.Transport.StreamableHttp
 
@@ -14,11 +15,13 @@ defmodule Mcpex.Transport.StreamableHttpTest do
 
     # Initialize session with our custom store
     conn
-    |> Plug.Session.call(Plug.Session.init(
-      store: Mcpex.Session.Store,
-      key: "_mcpex_session",
-      table: :mcpex_sessions
-    ))
+    |> Plug.Session.call(
+      Plug.Session.init(
+        store: Mcpex.Session.Store,
+        key: "_mcpex_session",
+        table: :mcpex_sessions
+      )
+    )
     |> Plug.Conn.fetch_session()
   end
 
@@ -35,16 +38,17 @@ defmodule Mcpex.Transport.StreamableHttpTest do
 
   describe "POST requests" do
     test "handles valid initialize request" do
-      body = JSON.encode!(%{
-        jsonrpc: "2.0",
-        method: "initialize",
-        params: %{
-          protocolVersion: "2025-03-26",
-          clientInfo: %{name: "test-client", version: "1.0.0"},
-          capabilities: %{}
-        },
-        id: "1"
-      })
+      body =
+        JSON.encode!(%{
+          jsonrpc: "2.0",
+          method: "initialize",
+          params: %{
+            protocolVersion: "2025-03-26",
+            clientInfo: %{name: "test-client", version: "1.0.0"},
+            capabilities: %{}
+          },
+          id: "1"
+        })
 
       conn =
         json_post_conn("/mcp", body)
@@ -54,7 +58,11 @@ defmodule Mcpex.Transport.StreamableHttpTest do
       conn = StreamableHttp.call(conn, opts)
 
       assert conn.status == 200
-      assert Plug.Conn.get_resp_header(conn, "content-type") == ["application/json; charset=utf-8"]
+
+      assert Plug.Conn.get_resp_header(conn, "content-type") == [
+               "application/json; charset=utf-8"
+             ]
+
       assert Plug.Conn.get_resp_header(conn, "mcp-session-id") != []
 
       {:ok, response} = JSON.decode(conn.resp_body)
@@ -64,10 +72,11 @@ defmodule Mcpex.Transport.StreamableHttpTest do
     end
 
     test "handles notification without response" do
-      body = JSON.encode!(%{
-        jsonrpc: "2.0",
-        method: "initialized"
-      })
+      body =
+        JSON.encode!(%{
+          jsonrpc: "2.0",
+          method: "initialized"
+        })
 
       conn =
         json_post_conn("/mcp", body)
@@ -76,15 +85,17 @@ defmodule Mcpex.Transport.StreamableHttpTest do
       opts = StreamableHttp.init([])
       conn = StreamableHttp.call(conn, opts)
 
-      assert conn.status == 204  # No content for notifications
+      # No content for notifications
+      assert conn.status == 204
     end
 
     test "rejects invalid origin" do
-      body = JSON.encode!(%{
-        jsonrpc: "2.0",
-        method: "test",
-        id: "1"
-      })
+      body =
+        JSON.encode!(%{
+          jsonrpc: "2.0",
+          method: "test",
+          id: "1"
+        })
 
       conn =
         json_post_conn("/mcp", body)
@@ -119,15 +130,17 @@ defmodule Mcpex.Transport.StreamableHttpTest do
       assert conn.status == 400
 
       {:ok, response} = JSON.decode(conn.resp_body)
-      assert response["error"]["code"] == -32700  # Parse error
+      # Parse error
+      assert response["error"]["code"] == -32700
     end
 
     test "handles method not found" do
-      body = JSON.encode!(%{
-        jsonrpc: "2.0",
-        method: "unknown_method",
-        id: "1"
-      })
+      body =
+        JSON.encode!(%{
+          jsonrpc: "2.0",
+          method: "unknown_method",
+          id: "1"
+        })
 
       conn =
         json_post_conn("/mcp", body)
@@ -139,7 +152,8 @@ defmodule Mcpex.Transport.StreamableHttpTest do
       assert conn.status == 200
 
       {:ok, response} = JSON.decode(conn.resp_body)
-      assert response["error"]["code"] == -32601  # Method not found
+      # Method not found
+      assert response["error"]["code"] == -32601
       assert response["id"] == "1"
     end
 
@@ -148,11 +162,12 @@ defmodule Mcpex.Transport.StreamableHttpTest do
         {:ok, %{custom: "response"}}
       end
 
-      body = JSON.encode!(%{
-        jsonrpc: "2.0",
-        method: "custom_method",
-        id: "1"
-      })
+      body =
+        JSON.encode!(%{
+          jsonrpc: "2.0",
+          method: "custom_method",
+          id: "1"
+        })
 
       conn =
         json_post_conn("/mcp", body)
@@ -169,16 +184,17 @@ defmodule Mcpex.Transport.StreamableHttpTest do
     end
 
     test "handles session ID from header" do
-      body = JSON.encode!(%{
-        jsonrpc: "2.0",
-        method: "initialize",
-        params: %{
-          protocolVersion: "2025-03-26",
-          clientInfo: %{name: "test-client", version: "1.0.0"},
-          capabilities: %{}
-        },
-        id: "1"
-      })
+      body =
+        JSON.encode!(%{
+          jsonrpc: "2.0",
+          method: "initialize",
+          params: %{
+            protocolVersion: "2025-03-26",
+            clientInfo: %{name: "test-client", version: "1.0.0"},
+            capabilities: %{}
+          },
+          id: "1"
+        })
 
       conn =
         json_post_conn("/mcp", body)
@@ -203,7 +219,11 @@ defmodule Mcpex.Transport.StreamableHttpTest do
       conn = StreamableHttp.call(conn, opts)
 
       assert conn.status == 200
-      assert Plug.Conn.get_resp_header(conn, "content-type") == ["text/event-stream; charset=utf-8"]
+
+      assert Plug.Conn.get_resp_header(conn, "content-type") == [
+               "text/event-stream; charset=utf-8"
+             ]
+
       assert Plug.Conn.get_resp_header(conn, "cache-control") == ["no-cache"]
       assert Plug.Conn.get_resp_header(conn, "connection") == ["keep-alive"]
       assert Plug.Conn.get_resp_header(conn, "mcp-session-id") != []
@@ -281,7 +301,8 @@ defmodule Mcpex.Transport.StreamableHttpTest do
 
       {:ok, responses} = JSON.decode(conn.resp_body)
       assert is_list(responses)
-      assert length(responses) == 1  # Only the request should have a response
+      # Only the request should have a response
+      assert length(responses) == 1
       assert hd(responses)["id"] == "1"
     end
   end

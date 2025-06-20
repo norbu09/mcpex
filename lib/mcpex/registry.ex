@@ -1,7 +1,7 @@
 defmodule Mcpex.Registry do
   @moduledoc """
   Central registry for MCP feature registration and discovery.
-  
+
   This module provides functions to register and discover MCP capabilities
   at runtime, allowing for a decoupled architecture where capabilities
   can be added without modifying the core server.
@@ -16,15 +16,15 @@ defmodule Mcpex.Registry do
 
   @doc """
   Registers a capability with the registry.
-  
+
   ## Parameters
-  
+
   - `capability_name`: The name of the capability (e.g., :resources, :prompts, :tools)
   - `module`: The module that implements the capability
   - `config`: Optional configuration for the capability
-  
+
   ## Returns
-  
+
   - `{:ok, pid}` if registration was successful
   - `{:error, reason}` if registration failed
   """
@@ -37,13 +37,13 @@ defmodule Mcpex.Registry do
 
   @doc """
   Looks up a capability in the registry.
-  
+
   ## Parameters
-  
+
   - `capability_name`: The name of the capability to look up
-  
+
   ## Returns
-  
+
   - `{:ok, {pid, %{module: module, config: config}}}` if the capability is registered
   - `{:error, :not_found}` if the capability is not registered
   """
@@ -57,9 +57,9 @@ defmodule Mcpex.Registry do
 
   @doc """
   Lists all registered capabilities.
-  
+
   ## Returns
-  
+
   A map of capability names to their implementations.
   """
   def list_capabilities do
@@ -71,13 +71,13 @@ defmodule Mcpex.Registry do
 
   @doc """
   Unregisters a capability from the registry.
-  
+
   ## Parameters
-  
+
   - `capability_name`: The name of the capability to unregister
-  
+
   ## Returns
-  
+
   - `:ok` if unregistration was successful
   """
   def unregister(capability_name) do

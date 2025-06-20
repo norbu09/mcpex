@@ -38,12 +38,15 @@ defmodule Mcpex.Protocol.ErrorsTest do
     end
 
     test "creates error with custom message" do
-      assert {-32601, "Custom message", nil} = Errors.create_error(:method_not_found, "Custom message")
+      assert {-32601, "Custom message", nil} =
+               Errors.create_error(:method_not_found, "Custom message")
     end
 
     test "creates error with custom message and data" do
       data = %{details: "more info"}
-      assert {-32602, "Custom message", ^data} = Errors.create_error(:invalid_params, "Custom message", data)
+
+      assert {-32602, "Custom message", ^data} =
+               Errors.create_error(:invalid_params, "Custom message", data)
     end
 
     test "creates error from integer code" do
@@ -105,11 +108,20 @@ defmodule Mcpex.Protocol.ErrorsTest do
 
   describe "normalize_error/1" do
     test "normalizes standard error tuples" do
-      assert {-32700, "Custom parse error", nil} = Errors.normalize_error({:parse_error, "Custom parse error"})
-      assert {-32600, "Custom invalid request", nil} = Errors.normalize_error({:invalid_request, "Custom invalid request"})
-      assert {-32601, "Custom method not found", nil} = Errors.normalize_error({:method_not_found, "Custom method not found"})
-      assert {-32602, "Custom invalid params", nil} = Errors.normalize_error({:invalid_params, "Custom invalid params"})
-      assert {-32603, "Custom internal error", nil} = Errors.normalize_error({:internal_error, "Custom internal error"})
+      assert {-32700, "Custom parse error", nil} =
+               Errors.normalize_error({:parse_error, "Custom parse error"})
+
+      assert {-32600, "Custom invalid request", nil} =
+               Errors.normalize_error({:invalid_request, "Custom invalid request"})
+
+      assert {-32601, "Custom method not found", nil} =
+               Errors.normalize_error({:method_not_found, "Custom method not found"})
+
+      assert {-32602, "Custom invalid params", nil} =
+               Errors.normalize_error({:invalid_params, "Custom invalid params"})
+
+      assert {-32603, "Custom internal error", nil} =
+               Errors.normalize_error({:internal_error, "Custom internal error"})
     end
 
     test "normalizes integer error tuples" do
@@ -118,7 +130,8 @@ defmodule Mcpex.Protocol.ErrorsTest do
     end
 
     test "normalizes string errors" do
-      assert {-32603, "Something went wrong", nil} = Errors.normalize_error("Something went wrong")
+      assert {-32603, "Something went wrong", nil} =
+               Errors.normalize_error("Something went wrong")
     end
 
     test "normalizes unknown errors" do

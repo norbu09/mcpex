@@ -76,7 +76,8 @@ defmodule Mcpex.Protocol.JsonRpcTest do
     end
 
     test "creates error response with data" do
-      error_response = JsonRpc.error_response(-32602, "Invalid params", %{detail: "missing field"}, "1")
+      error_response =
+        JsonRpc.error_response(-32602, "Invalid params", %{detail: "missing field"}, "1")
 
       assert %{
                jsonrpc: "2.0",
@@ -155,20 +156,25 @@ defmodule Mcpex.Protocol.JsonRpcTest do
     end
 
     test "parses valid error response" do
-      json = ~s({"jsonrpc": "2.0", "error": {"code": -32601, "message": "Method not found"}, "id": "1"})
+      json =
+        ~s({"jsonrpc": "2.0", "error": {"code": -32601, "message": "Method not found"}, "id": "1"})
 
       assert {:ok, message} = JsonRpc.parse(json)
-      assert %{jsonrpc: "2.0", error: %{code: -32601, message: "Method not found"}, id: "1"} = message
+
+      assert %{jsonrpc: "2.0", error: %{code: -32601, message: "Method not found"}, id: "1"} =
+               message
     end
 
     test "parses valid batch" do
-      json = ~s([{"jsonrpc": "2.0", "method": "test1", "id": "1"}, {"jsonrpc": "2.0", "method": "test2", "id": "2"}])
+      json =
+        ~s([{"jsonrpc": "2.0", "method": "test1", "id": "1"}, {"jsonrpc": "2.0", "method": "test2", "id": "2"}])
 
       assert {:ok, messages} = JsonRpc.parse(json)
+
       assert [
-        %{jsonrpc: "2.0", method: "test1", id: "1"},
-        %{jsonrpc: "2.0", method: "test2", id: "2"}
-      ] = messages
+               %{jsonrpc: "2.0", method: "test1", id: "1"},
+               %{jsonrpc: "2.0", method: "test2", id: "2"}
+             ] = messages
     end
 
     test "rejects invalid JSON" do
@@ -194,9 +200,11 @@ defmodule Mcpex.Protocol.JsonRpcTest do
     end
 
     test "rejects response with both result and error" do
-      json = ~s({"jsonrpc": "2.0", "result": true, "error": {"code": -1, "message": "test"}, "id": "1"})
+      json =
+        ~s({"jsonrpc": "2.0", "result": true, "error": {"code": -1, "message": "test"}, "id": "1"})
 
-      assert {:error, {:invalid_request, "Response cannot have both result and error"}} = JsonRpc.parse(json)
+      assert {:error, {:invalid_request, "Response cannot have both result and error"}} =
+               JsonRpc.parse(json)
     end
 
     test "rejects malformed error object" do

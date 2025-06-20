@@ -1,11 +1,11 @@
 defmodule Mcpex.TestSupport.DemoData do
   @moduledoc """
   Demo data for testing and examples.
-  
+
   This module provides sample data for tools, prompts, and resources
   that can be used in tests and examples.
   """
-  
+
   @doc """
   Registers demo tools in the registry.
   """
@@ -42,55 +42,61 @@ defmodule Mcpex.TestSupport.DemoData do
         }
       ]
     })
-    
+
     # Register tool executors
     Mcpex.Registry.register(:tool_executors, nil, %{
       executors: %{
         "calculator" => fn arguments ->
           expression = Map.get(arguments, "expression", "")
           execution_id = "exec-#{:erlang.system_time(:millisecond)}"
-          
+
           # This is a simplified example - in a real implementation, you would
           # validate the expression and use a proper parser/evaluator
-          result = case Code.string_to_quoted(expression) do
-            {:ok, ast} ->
-              try do
-                {result, _} = Code.eval_quoted(ast)
-                "#{result}"
-              rescue
-                _ -> "Error evaluating expression"
-              end
-            
-            {:error, _} ->
-              "Invalid expression"
-          end
-          
-          {:ok, %{
-            "executionId" => execution_id,
-            "content" => [%{
-              "type" => "text",
-              "text" => "Result: #{result}"
-            }]
-          }}
+          result =
+            case Code.string_to_quoted(expression) do
+              {:ok, ast} ->
+                try do
+                  {result, _} = Code.eval_quoted(ast)
+                  "#{result}"
+                rescue
+                  _ -> "Error evaluating expression"
+                end
+
+              {:error, _} ->
+                "Invalid expression"
+            end
+
+          {:ok,
+           %{
+             "executionId" => execution_id,
+             "content" => [
+               %{
+                 "type" => "text",
+                 "text" => "Result: #{result}"
+               }
+             ]
+           }}
         end,
-        
         "weather" => fn arguments ->
           location = Map.get(arguments, "location", "")
           execution_id = "exec-#{:erlang.system_time(:millisecond)}"
-          
+
           # In a real implementation, you would call a weather API
-          {:ok, %{
-            "executionId" => execution_id,
-            "content" => [%{
-              "type" => "text",
-              "text" => "Weather for #{location}: Sunny, 25°C"
-            }]
-          }}
+          {:ok,
+           %{
+             "executionId" => execution_id,
+             "content" => [
+               %{
+                 "type" => "text",
+                 "text" => "Weather for #{location}: Sunny, 25°C"
+               }
+             ]
+           }}
         end
       }
     })
   end
-  
+
   @doc """
   Registers demo prompts in the registry.
   """
@@ -131,7 +137,7 @@ defmodule Mcpex.TestSupport.DemoData do
         }
       ]
     })
-    
+
     # Register individual prompts
     Mcpex.Registry.register({:prompt, "greeting"}, nil, %{
       "name" => "greeting",
@@ -147,11 +153,12 @@ defmodule Mcpex.TestSupport.DemoData do
         }
       }
     })
-    
+
     Mcpex.Registry.register({:prompt, "summary"}, nil, %{
       "name" => "summary",
       "description" => "A prompt to summarize text",
-      "template" => "Please summarize the following text in {{length}} words or less:\n\n{{text}}",
+      "template" =>
+        "Please summarize the following text in {{length}} words or less:\n\n{{text}}",
       "argumentSchema" => %{
         "type" => "object",
         "properties" => %{
@@ -168,7 +175,7 @@ defmodule Mcpex.TestSupport.DemoData do
       }
     })
   end
-  
+
   @doc """
   Registers demo resources in the registry.
   """
@@ -177,20 +184,24 @@ defmodule Mcpex.TestSupport.DemoData do
     Mcpex.Registry.register(:resources_registry, nil, %{
       resources: [
         %{"uri" => "file://example.txt", "name" => "Example File", "mimeType" => "text/plain"},
-        %{"uri" => "file://example.json", "name" => "Example JSON", "mimeType" => "application/json"}
+        %{
+          "uri" => "file://example.json",
+          "name" => "Example JSON",
+          "mimeType" => "application/json"
+        }
       ]
     })
-    
+
     # Register resource contents
     Mcpex.Registry.register({:resource_content, "file://example.txt"}, nil, %{
       content: "This is an example text file."
     })
-    
+
     Mcpex.Registry.register({:resource_content, "file://example.json"}, nil, %{
       content: ~s({"example": "This is an example JSON file."})
     })
   end
-  
+
   @doc """
   Registers all demo data in the registry.
   """

@@ -17,19 +17,19 @@ defmodule Mcpex.Protocol.Errors do
 
   @spec method_not_found() :: {integer(), String.t(), nil}
   def method_not_found, do: {-32601, "Method not found", nil}
-  
+
   @spec server_not_initialized() :: {integer(), String.t(), nil}
   def server_not_initialized, do: {-32002, "Server not initialized", nil}
 
   @spec invalid_params() :: {integer(), String.t(), nil}
   def invalid_params, do: {-32602, "Invalid params", nil}
-  
+
   @spec invalid_params(String.t()) :: {integer(), String.t(), nil}
   def invalid_params(message), do: {-32602, message, nil}
 
   @spec internal_error() :: {integer(), String.t(), nil}
   def internal_error, do: {-32603, "Internal error", nil}
-  
+
   @spec internal_error(String.t()) :: {integer(), String.t(), nil}
   def internal_error(message), do: {-32603, message, nil}
 
@@ -47,7 +47,8 @@ defmodule Mcpex.Protocol.Errors do
   @doc """
   Creates a standardized error tuple for use in error responses.
   """
-  @spec create_error(atom() | integer(), String.t() | nil, any()) :: {integer(), String.t(), any()}
+  @spec create_error(atom() | integer(), String.t() | nil, any()) ::
+          {integer(), String.t(), any()}
   def create_error(code, message \\ nil, data \\ nil)
 
   def create_error(:parse_error, message, data) do

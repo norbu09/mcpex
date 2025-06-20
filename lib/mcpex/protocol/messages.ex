@@ -129,7 +129,11 @@ defmodule Mcpex.Protocol.Messages do
   @spec get_prompt_request(String.t(), map(), String.t()) :: map()
   def get_prompt_request(name, arguments, id) do
     params = %{name: name}
-    params = if arguments && map_size(arguments) > 0, do: Map.put(params, :arguments, arguments), else: params
+
+    params =
+      if arguments && map_size(arguments) > 0,
+        do: Map.put(params, :arguments, arguments),
+        else: params
 
     %{
       jsonrpc: "2.0",
@@ -157,7 +161,11 @@ defmodule Mcpex.Protocol.Messages do
   @spec call_tool_request(String.t(), map(), String.t()) :: map()
   def call_tool_request(name, arguments, id) do
     params = %{name: name}
-    params = if arguments && map_size(arguments) > 0, do: Map.put(params, :arguments, arguments), else: params
+
+    params =
+      if arguments && map_size(arguments) > 0,
+        do: Map.put(params, :arguments, arguments),
+        else: params
 
     %{
       jsonrpc: "2.0",
@@ -208,11 +216,12 @@ defmodule Mcpex.Protocol.Messages do
     with {:ok, protocol_version} <- validate_protocol_version(params),
          {:ok, capabilities} <- validate_capabilities(params),
          {:ok, client_info} <- validate_client_info(params) do
-      {:ok, %{
-        protocolVersion: protocol_version,
-        capabilities: capabilities,
-        clientInfo: client_info
-      }}
+      {:ok,
+       %{
+         protocolVersion: protocol_version,
+         capabilities: capabilities,
+         clientInfo: client_info
+       }}
     end
   end
 
@@ -255,7 +264,7 @@ defmodule Mcpex.Protocol.Messages do
   end
 
   defp validate_client_info(%{"clientInfo" => %{"name" => name, "version" => version}})
-    when is_binary(name) and is_binary(version) do
+       when is_binary(name) and is_binary(version) do
     {:ok, %{name: name, version: version}}
   end
 
@@ -264,7 +273,7 @@ defmodule Mcpex.Protocol.Messages do
   end
 
   defp validate_client_info(%{clientInfo: %{name: name, version: version}})
-    when is_binary(name) and is_binary(version) do
+       when is_binary(name) and is_binary(version) do
     {:ok, %{name: name, version: version}}
   end
 

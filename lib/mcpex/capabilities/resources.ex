@@ -1,7 +1,7 @@
 defmodule Mcpex.Capabilities.Resources do
   @moduledoc """
   Resources capability implementation.
-  
+
   This module implements the resources capability, which allows clients to:
   - List available resources
   - Read resource contents
@@ -45,23 +45,23 @@ defmodule Mcpex.Capabilities.Resources do
 
   defp handle_list(params, session_id) do
     Logger.info("Listing resources for session #{session_id} with params: #{inspect(params)}")
-    
+
     # Get resources from the registry or other storage
     resources = get_resources(params)
-    
+
     {:ok, %{"resources" => resources}}
   end
 
   defp handle_read(params, session_id) do
     Logger.info("Reading resource for session #{session_id} with params: #{inspect(params)}")
-    
+
     uri = Map.get(params, "uri")
-    
+
     if uri do
       case read_resource(uri) do
         {:ok, content} ->
           {:ok, %{"contents" => [%{"uri" => uri, "text" => content}]}}
-        
+
         {:error, reason} ->
           {:error, Errors.internal_error("Failed to read resource: #{reason}")}
       end
@@ -71,14 +71,16 @@ defmodule Mcpex.Capabilities.Resources do
   end
 
   defp handle_subscribe(params, session_id) do
-    Logger.info("Subscribing to resources for session #{session_id} with params: #{inspect(params)}")
-    
+    Logger.info(
+      "Subscribing to resources for session #{session_id} with params: #{inspect(params)}"
+    )
+
     uri = Map.get(params, "uri")
-    
+
     if uri do
       # Register subscription in the registry
       subscribe_to_resource(uri, session_id)
-      
+
       {:ok, %{"subscriptionId" => "resource:#{uri}"}}
     else
       {:error, Errors.invalid_params("Missing required parameter: uri")}
@@ -86,14 +88,16 @@ defmodule Mcpex.Capabilities.Resources do
   end
 
   defp handle_unsubscribe(params, session_id) do
-    Logger.info("Unsubscribing from resources for session #{session_id} with params: #{inspect(params)}")
-    
+    Logger.info(
+      "Unsubscribing from resources for session #{session_id} with params: #{inspect(params)}"
+    )
+
     subscription_id = Map.get(params, "subscriptionId")
-    
+
     if subscription_id do
       # Unregister subscription in the registry
       unsubscribe_from_resource(subscription_id, session_id)
-      
+
       {:ok, %{}}
     else
       {:error, Errors.invalid_params("Missing required parameter: subscriptionId")}

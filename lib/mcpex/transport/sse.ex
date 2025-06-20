@@ -56,7 +56,9 @@ defmodule Mcpex.Transport.SSE do
   end
 
   def validate_security(conn, opts) do
-    allowed_origins = Keyword.get(opts, :allowed_origins, ["http://localhost", "https://localhost"])
+    allowed_origins =
+      Keyword.get(opts, :allowed_origins, ["http://localhost", "https://localhost"])
+
     Behaviour.validate_origin(conn, allowed_origins)
   end
 
@@ -85,7 +87,6 @@ defmodule Mcpex.Transport.SSE do
          {:ok, message} <- Behaviour.parse_json_rpc_message(body),
          {session_id, conn} <- get_session_id(conn, opts),
          {:ok, response} <- process_message(message, session_id, conn, opts) do
-
       conn = Helpers.put_session_header(conn, session_id)
       Behaviour.send_json_response(conn, 200, response)
     else
@@ -93,16 +94,26 @@ defmodule Mcpex.Transport.SSE do
         send_forbidden(conn, "Invalid origin")
 
       {:error, {:parse_error, reason}} ->
-        error_response = Errors.to_error_response(Errors.create_error(:parse_error, reason, nil), nil)
+        error_response =
+          Errors.to_error_response(Errors.create_error(:parse_error, reason, nil), nil)
+
         Behaviour.send_json_response(conn, 400, error_response)
 
       {:error, {:invalid_request, reason}} ->
-        error_response = Errors.to_error_response(Errors.create_error(:invalid_request, reason, nil), nil)
+        error_response =
+          Errors.to_error_response(Errors.create_error(:invalid_request, reason, nil), nil)
+
         Behaviour.send_json_response(conn, 400, error_response)
 
       {:error, reason} ->
         Logger.error("SSE transport error: #{inspect(reason)}")
-        error_response = Errors.to_error_response(Errors.create_error(:internal_error, "Internal server error", nil), nil)
+
+        error_response =
+          Errors.to_error_response(
+            Errors.create_error(:internal_error, "Internal server error", nil),
+            nil
+          )
+
         Behaviour.send_json_response(conn, 500, error_response)
     end
   end
@@ -110,8 +121,7 @@ defmodule Mcpex.Transport.SSE do
   defp handle_sse_request(conn, opts) do
     with {:ok, conn} <- validate_security(conn, opts),
          {session_id, conn} <- get_session_id(conn, opts) do
-
-            # Set transport type for this session
+      # Set transport type for this session
       Helpers.set_transport(conn, :sse)
       conn = Helpers.put_session_header(conn, session_id)
       start_sse_stream(conn, session_id, opts)
@@ -141,7 +151,7 @@ defmodule Mcpex.Transport.SSE do
       params: %{sessionId: session_id}
     }
 
-        case Behaviour.encode_json_rpc_message(initial_message) do
+    case Behaviour.encode_json_rpc_message(initial_message) do
       {:ok, json} ->
         {:ok, conn} = chunk(conn, format_sse_data(json))
 
@@ -151,7 +161,9 @@ defmodule Mcpex.Transport.SSE do
         conn
 
       {:error, _} ->
-        {:ok, conn} = chunk(conn, format_sse_data(~s({"error": "Failed to establish connection"})))
+        {:ok, conn} =
+          chunk(conn, format_sse_data(~s({"error": "Failed to establish connection"})))
+
         conn
     end
   end
@@ -166,13 +178,15 @@ defmodule Mcpex.Transport.SSE do
     responses = Enum.map(messages, &handle_single_message(&1, session_id, conn, opts))
 
     # Filter out notifications (which don't have responses)
-    valid_responses = Enum.filter(responses, fn
-      {:ok, response} when is_map(response) -> true
-      _ -> false
-    end)
+    valid_responses =
+      Enum.filter(responses, fn
+        {:ok, response} when is_map(response) -> true
+        _ -> false
+      end)
 
     case valid_responses do
-      [] -> {:ok, nil}  # All notifications
+      # All notifications
+      [] -> {:ok, nil}
       responses -> {:ok, Enum.map(responses, fn {:ok, resp} -> resp end)}
     end
   end
@@ -184,7 +198,8 @@ defmodule Mcpex.Transport.SSE do
 
       JsonRpc.notification?(message) ->
         handle_notification(message, session_id, opts)
-        {:ok, nil}  # Notifications don't have responses
+        # Notifications don't have responses
+        {:ok, nil}
 
       true ->
         error = Errors.create_error(:invalid_request, "Invalid message type", nil)
@@ -241,7 +256,10 @@ defmodule Mcpex.Transport.SSE do
         :ok
 
       _ ->
-        Logger.debug("Received notification #{method} for session #{session_id}: #{inspect(params)}")
+        Logger.debug(
+          "Received notification #{method} for session #{session_id}: #{inspect(params)}"
+        )
+
         :ok
     end
   end
@@ -257,6 +275,7 @@ defmodule Mcpex.Transport.SSE do
 
         # Return server capabilities
         server_info = %{name: "mcpex", version: "0.1.0"}
+
         server_capabilities = %{
           resources: %{},
           prompts: %{},
@@ -264,7 +283,8 @@ defmodule Mcpex.Transport.SSE do
         }
 
         result = %{
-          protocolVersion: "2024-11-05",  # SSE transport uses legacy version
+          # SSE transport uses legacy version
+          protocolVersion: "2024-11-05",
           capabilities: server_capabilities,
           serverInfo: server_info
         }
@@ -280,7 +300,8 @@ defmodule Mcpex.Transport.SSE do
   defp validate_initialize_params(params) do
     # Basic validation - in a real implementation, this would be more thorough
     case params do
-      %{"protocolVersion" => version, "clientInfo" => client_info} when is_binary(version) and is_map(client_info) ->
+      %{"protocolVersion" => version, "clientInfo" => client_info}
+      when is_binary(version) and is_map(client_info) ->
         {:ok, params}
 
       _ ->

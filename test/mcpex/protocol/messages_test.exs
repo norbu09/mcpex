@@ -17,20 +17,20 @@ defmodule Mcpex.Protocol.MessagesTest do
       request = Messages.initialize_request(client_info, capabilities, "1")
 
       assert %{
-        jsonrpc: "2.0",
-        method: "initialize",
-        params: %{
-          protocolVersion: "2025-03-26",
-          capabilities: %{
-            resources: %{},
-            prompts: nil,
-            tools: %{},
-            sampling: nil
-          },
-          clientInfo: %{name: "test-client", version: "1.0.0"}
-        },
-        id: "1"
-      } = request
+               jsonrpc: "2.0",
+               method: "initialize",
+               params: %{
+                 protocolVersion: "2025-03-26",
+                 capabilities: %{
+                   resources: %{},
+                   prompts: nil,
+                   tools: %{},
+                   sampling: nil
+                 },
+                 clientInfo: %{name: "test-client", version: "1.0.0"}
+               },
+               id: "1"
+             } = request
     end
   end
 
@@ -42,19 +42,19 @@ defmodule Mcpex.Protocol.MessagesTest do
       response = Messages.initialize_response(server_info, capabilities, "1")
 
       assert %{
-        jsonrpc: "2.0",
-        result: %{
-          protocolVersion: "2025-03-26",
-          capabilities: %{
-            resources: %{},
-            prompts: %{},
-            tools: nil,
-            sampling: nil
-          },
-          serverInfo: %{name: "test-server", version: "1.0.0"}
-        },
-        id: "1"
-      } = response
+               jsonrpc: "2.0",
+               result: %{
+                 protocolVersion: "2025-03-26",
+                 capabilities: %{
+                   resources: %{},
+                   prompts: %{},
+                   tools: nil,
+                   sampling: nil
+                 },
+                 serverInfo: %{name: "test-server", version: "1.0.0"}
+               },
+               id: "1"
+             } = response
     end
   end
 
@@ -63,9 +63,9 @@ defmodule Mcpex.Protocol.MessagesTest do
       notification = Messages.initialized_notification()
 
       assert %{
-        jsonrpc: "2.0",
-        method: "initialized"
-      } = notification
+               jsonrpc: "2.0",
+               method: "initialized"
+             } = notification
 
       refute Map.has_key?(notification, :id)
     end
@@ -76,30 +76,30 @@ defmodule Mcpex.Protocol.MessagesTest do
       request = Messages.list_resources_request("1")
 
       assert %{
-        jsonrpc: "2.0",
-        method: "resources/list",
-        id: "1"
-      } = request
+               jsonrpc: "2.0",
+               method: "resources/list",
+               id: "1"
+             } = request
     end
 
     test "read_resource_request/2 creates correct request" do
       request = Messages.read_resource_request("file://test.txt", "2")
 
       assert %{
-        jsonrpc: "2.0",
-        method: "resources/read",
-        params: %{uri: "file://test.txt"},
-        id: "2"
-      } = request
+               jsonrpc: "2.0",
+               method: "resources/read",
+               params: %{uri: "file://test.txt"},
+               id: "2"
+             } = request
     end
 
     test "resources_list_changed_notification/0 creates correct notification" do
       notification = Messages.resources_list_changed_notification()
 
       assert %{
-        jsonrpc: "2.0",
-        method: "notifications/resources/list_changed"
-      } = notification
+               jsonrpc: "2.0",
+               method: "notifications/resources/list_changed"
+             } = notification
 
       refute Map.has_key?(notification, :id)
     end
@@ -110,10 +110,10 @@ defmodule Mcpex.Protocol.MessagesTest do
       request = Messages.list_prompts_request("1")
 
       assert %{
-        jsonrpc: "2.0",
-        method: "prompts/list",
-        id: "1"
-      } = request
+               jsonrpc: "2.0",
+               method: "prompts/list",
+               id: "1"
+             } = request
     end
 
     test "get_prompt_request/3 creates correct request with arguments" do
@@ -121,25 +121,25 @@ defmodule Mcpex.Protocol.MessagesTest do
       request = Messages.get_prompt_request("hello", arguments, "2")
 
       assert %{
-        jsonrpc: "2.0",
-        method: "prompts/get",
-        params: %{
-          name: "hello",
-          arguments: %{template: "greeting", name: "World"}
-        },
-        id: "2"
-      } = request
+               jsonrpc: "2.0",
+               method: "prompts/get",
+               params: %{
+                 name: "hello",
+                 arguments: %{template: "greeting", name: "World"}
+               },
+               id: "2"
+             } = request
     end
 
     test "get_prompt_request/3 creates correct request without arguments" do
       request = Messages.get_prompt_request("hello", %{}, "2")
 
       assert %{
-        jsonrpc: "2.0",
-        method: "prompts/get",
-        params: %{name: "hello"},
-        id: "2"
-      } = request
+               jsonrpc: "2.0",
+               method: "prompts/get",
+               params: %{name: "hello"},
+               id: "2"
+             } = request
 
       refute Map.has_key?(request.params, :arguments)
     end
@@ -148,9 +148,9 @@ defmodule Mcpex.Protocol.MessagesTest do
       notification = Messages.prompts_list_changed_notification()
 
       assert %{
-        jsonrpc: "2.0",
-        method: "notifications/prompts/list_changed"
-      } = notification
+               jsonrpc: "2.0",
+               method: "notifications/prompts/list_changed"
+             } = notification
 
       refute Map.has_key?(notification, :id)
     end
@@ -161,10 +161,10 @@ defmodule Mcpex.Protocol.MessagesTest do
       request = Messages.list_tools_request("1")
 
       assert %{
-        jsonrpc: "2.0",
-        method: "tools/list",
-        id: "1"
-      } = request
+               jsonrpc: "2.0",
+               method: "tools/list",
+               id: "1"
+             } = request
     end
 
     test "call_tool_request/3 creates correct request with arguments" do
@@ -172,25 +172,25 @@ defmodule Mcpex.Protocol.MessagesTest do
       request = Messages.call_tool_request("echo", arguments, "2")
 
       assert %{
-        jsonrpc: "2.0",
-        method: "tools/call",
-        params: %{
-          name: "echo",
-          arguments: %{text: "Hello, World!"}
-        },
-        id: "2"
-      } = request
+               jsonrpc: "2.0",
+               method: "tools/call",
+               params: %{
+                 name: "echo",
+                 arguments: %{text: "Hello, World!"}
+               },
+               id: "2"
+             } = request
     end
 
     test "call_tool_request/3 creates correct request without arguments" do
       request = Messages.call_tool_request("ping", %{}, "2")
 
       assert %{
-        jsonrpc: "2.0",
-        method: "tools/call",
-        params: %{name: "ping"},
-        id: "2"
-      } = request
+               jsonrpc: "2.0",
+               method: "tools/call",
+               params: %{name: "ping"},
+               id: "2"
+             } = request
 
       refute Map.has_key?(request.params, :arguments)
     end
@@ -199,9 +199,9 @@ defmodule Mcpex.Protocol.MessagesTest do
       notification = Messages.tools_list_changed_notification()
 
       assert %{
-        jsonrpc: "2.0",
-        method: "notifications/tools/list_changed"
-      } = notification
+               jsonrpc: "2.0",
+               method: "notifications/tools/list_changed"
+             } = notification
 
       refute Map.has_key?(notification, :id)
     end
@@ -251,7 +251,8 @@ defmodule Mcpex.Protocol.MessagesTest do
     end
 
     test "rejects non-object params" do
-      assert {:error, "Initialize params must be an object"} = Messages.validate_initialize_params("invalid")
+      assert {:error, "Initialize params must be an object"} =
+               Messages.validate_initialize_params("invalid")
     end
   end
 

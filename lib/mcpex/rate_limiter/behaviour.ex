@@ -28,12 +28,15 @@ defmodule Mcpex.RateLimiter.Behaviour do
   For rate-limited checks, may include `:retry_after_seconds` and an exact `:reset_at` Unix timestamp.
   """
   @type limit_details :: %{
-    optional(:remaining) => non_neg_integer(),
-    optional(:limit) => non_neg_integer(), # Max number of requests for the window
-    optional(:reset_at) => non_neg_integer(), # Unix timestamp for when the limit window resets
-    optional(:retry_after_seconds) => non_neg_integer(),
-    optional(:reason) => String.t() # For non-error cases like unknown rule
-  }
+          optional(:remaining) => non_neg_integer(),
+          # Max number of requests for the window
+          optional(:limit) => non_neg_integer(),
+          # Unix timestamp for when the limit window resets
+          optional(:reset_at) => non_neg_integer(),
+          optional(:retry_after_seconds) => non_neg_integer(),
+          # For non-error cases like unknown rule
+          optional(:reason) => String.t()
+        }
 
   @doc """
   Initializes the rate limiter with given options.
@@ -57,7 +60,11 @@ defmodule Mcpex.RateLimiter.Behaviour do
     * `{:error, :rate_limited, new_state, details}`: If the request is denied due
       to rate limiting. `details` contains information like when to retry.
   """
-  @callback check_and_update_limit(state :: state(), identifier :: rate_limit_identifier(), rule_name :: rule_name()) ::
+  @callback check_and_update_limit(
+              state :: state(),
+              identifier :: rate_limit_identifier(),
+              rule_name :: rule_name()
+            ) ::
               {:ok, new_state :: state(), details :: limit_details()}
               | {:error, :rate_limited, new_state :: state(), details :: limit_details()}
 end

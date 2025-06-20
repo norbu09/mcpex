@@ -1,5 +1,6 @@
 defmodule Mcpex.Session.StoreTest do
-  use ExUnit.Case, async: false  # Not async due to session store
+  # Not async due to session store
+  use ExUnit.Case, async: false
 
   alias Mcpex.Session.Store
 

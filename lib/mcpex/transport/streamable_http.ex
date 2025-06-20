@@ -46,7 +46,8 @@ defmodule Mcpex.Transport.StreamableHttp do
       message_handler: nil,
       session_store: :ets,
       enable_streaming: true,
-      max_body_length: 1_048_576  # 1MB
+      # 1MB
+      max_body_length: 1_048_576
     ]
 
     Keyword.merge(defaults, opts)
@@ -70,12 +71,14 @@ defmodule Mcpex.Transport.StreamableHttp do
     end
   end
 
-    def handle_request(conn, opts) do
+  def handle_request(conn, opts) do
     call(conn, opts)
   end
 
   def validate_security(conn, opts) do
-    allowed_origins = Keyword.get(opts, :allowed_origins, ["http://localhost", "https://localhost"])
+    allowed_origins =
+      Keyword.get(opts, :allowed_origins, ["http://localhost", "https://localhost"])
+
     Behaviour.validate_origin(conn, allowed_origins)
   end
 
@@ -109,7 +112,6 @@ defmodule Mcpex.Transport.StreamableHttp do
          {:ok, message} <- Behaviour.parse_json_rpc_message(body),
          {session_id, conn} <- get_or_create_session(conn, opts),
          {:ok, response} <- process_message(message, session_id, conn, opts) do
-
       conn = prepare_response_headers(conn, session_id)
       # Set transport type for this session
       Helpers.set_transport(conn, :streamable_http)
@@ -130,16 +132,26 @@ defmodule Mcpex.Transport.StreamableHttp do
         send_bad_request(conn, "Content-Type must be application/json")
 
       {:error, {:parse_error, reason}} ->
-        error_response = Errors.to_error_response(Errors.create_error(:parse_error, reason, nil), nil)
+        error_response =
+          Errors.to_error_response(Errors.create_error(:parse_error, reason, nil), nil)
+
         Behaviour.send_json_response(conn, 400, error_response)
 
       {:error, {:invalid_request, reason}} ->
-        error_response = Errors.to_error_response(Errors.create_error(:invalid_request, reason, nil), nil)
+        error_response =
+          Errors.to_error_response(Errors.create_error(:invalid_request, reason, nil), nil)
+
         Behaviour.send_json_response(conn, 400, error_response)
 
       {:error, reason} ->
         Logger.error("Streamable HTTP transport error: #{inspect(reason)}")
-        error_response = Errors.to_error_response(Errors.create_error(:internal_error, "Internal server error", nil), nil)
+
+        error_response =
+          Errors.to_error_response(
+            Errors.create_error(:internal_error, "Internal server error", nil),
+            nil
+          )
+
         Behaviour.send_json_response(conn, 500, error_response)
     end
   end
@@ -147,8 +159,7 @@ defmodule Mcpex.Transport.StreamableHttp do
   defp handle_stream_request(conn, opts) do
     with {:ok, conn} <- validate_security(conn, opts),
          {session_id, conn} <- get_or_create_session(conn, opts) do
-
-            # Set transport type and start SSE stream
+      # Set transport type and start SSE stream
       Helpers.set_transport(conn, :streamable_http)
       start_sse_stream(conn, session_id, opts)
     else
@@ -206,13 +217,15 @@ defmodule Mcpex.Transport.StreamableHttp do
     responses = Enum.map(messages, &handle_single_message(&1, session_id, conn, opts))
 
     # Filter out notifications (which don't have responses)
-    valid_responses = Enum.filter(responses, fn
-      {:ok, response} when is_map(response) -> true
-      _ -> false
-    end)
+    valid_responses =
+      Enum.filter(responses, fn
+        {:ok, response} when is_map(response) -> true
+        _ -> false
+      end)
 
     case valid_responses do
-      [] -> {:ok, nil}  # All notifications
+      # All notifications
+      [] -> {:ok, nil}
       responses -> {:ok, Enum.map(responses, fn {:ok, resp} -> resp end)}
     end
   end
@@ -224,7 +237,8 @@ defmodule Mcpex.Transport.StreamableHttp do
 
       JsonRpc.notification?(message) ->
         handle_notification(message, session_id, opts)
-        {:ok, nil}  # Notifications don't have responses
+        # Notifications don't have responses
+        {:ok, nil}
 
       true ->
         error = Errors.create_error(:invalid_request, "Invalid message type", nil)
@@ -281,7 +295,10 @@ defmodule Mcpex.Transport.StreamableHttp do
         :ok
 
       _ ->
-        Logger.debug("Received notification #{method} for session #{session_id}: #{inspect(params)}")
+        Logger.debug(
+          "Received notification #{method} for session #{session_id}: #{inspect(params)}"
+        )
+
         :ok
     end
   end
@@ -297,6 +314,7 @@ defmodule Mcpex.Transport.StreamableHttp do
 
         # Return server capabilities
         server_info = %{name: "mcpex", version: "0.1.0"}
+
         server_capabilities = %{
           resources: %{},
           prompts: %{},
@@ -314,14 +332,18 @@ defmodule Mcpex.Transport.StreamableHttp do
 
   defp validate_content_type(conn) do
     case get_req_header(conn, "content-type") do
-      [] -> {:error, :invalid_content_type}
+      [] ->
+        {:error, :invalid_content_type}
+
       [content_type] ->
         if String.starts_with?(content_type, "application/json") do
           {:ok, conn}
         else
           {:error, :invalid_content_type}
         end
-      _ -> {:error, :invalid_content_type}
+
+      _ ->
+        {:error, :invalid_content_type}
     end
   end
 

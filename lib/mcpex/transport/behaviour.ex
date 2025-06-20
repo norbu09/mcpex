@@ -75,7 +75,8 @@ defmodule Mcpex.Transport.Behaviour do
   @doc """
   Helper function to parse JSON-RPC messages from request body.
   """
-  @spec parse_json_rpc_message(String.t()) :: {:ok, JsonRpc.message() | [JsonRpc.message()]} | {:error, term()}
+  @spec parse_json_rpc_message(String.t()) ::
+          {:ok, JsonRpc.message() | [JsonRpc.message()]} | {:error, term()}
   def parse_json_rpc_message(body) when is_binary(body) do
     JsonRpc.parse(body)
   end
@@ -83,7 +84,8 @@ defmodule Mcpex.Transport.Behaviour do
   @doc """
   Helper function to encode JSON-RPC messages for response.
   """
-  @spec encode_json_rpc_message(JsonRpc.message() | [JsonRpc.message()]) :: {:ok, String.t()} | {:error, term()}
+  @spec encode_json_rpc_message(JsonRpc.message() | [JsonRpc.message()]) ::
+          {:ok, String.t()} | {:error, term()}
   def encode_json_rpc_message(message) do
     JsonRpc.encode(message)
   end
@@ -127,6 +129,7 @@ defmodule Mcpex.Transport.Behaviour do
   def send_json_response(conn, status, data) do
     try do
       json = JSON.encode!(data)
+
       conn
       |> Conn.put_resp_content_type("application/json")
       |> Conn.send_resp(status, json)

@@ -1,7 +1,7 @@
 defmodule Mcpex.Server do
   @moduledoc """
   Main server GenServer for the MCP protocol.
-  
+
   This module handles:
   - Initialization handshake
   - Capability negotiation
@@ -19,9 +19,9 @@ defmodule Mcpex.Server do
 
   @doc """
   Starts the MCP server.
-  
+
   ## Options
-  
+
   - `:name` - The name of the server (default: `Mcpex.Server`)
   - `:server_info` - Information about the server (name, version, etc.)
   - `:capabilities` - Map of capabilities the server supports
@@ -33,15 +33,15 @@ defmodule Mcpex.Server do
 
   @doc """
   Processes an incoming JSON-RPC message.
-  
+
   ## Parameters
-  
+
   - `server` - The server process or name
   - `message` - The JSON-RPC message as a string or map
   - `session_id` - Optional session ID for the client
-  
+
   ## Returns
-  
+
   - `{:ok, response}` - The response to send back to the client
   - `{:error, reason}` - If an error occurred
   - `:noreply` - If no response is needed (e.g., for notifications)
@@ -52,16 +52,16 @@ defmodule Mcpex.Server do
 
   @doc """
   Sends a notification to a client.
-  
+
   ## Parameters
-  
+
   - `server` - The server process or name
   - `method` - The notification method
   - `params` - The notification parameters
   - `session_id` - The session ID of the client to notify
-  
+
   ## Returns
-  
+
   - `:ok` - If the notification was sent
   - `{:error, reason}` - If an error occurred
   """
@@ -73,20 +73,21 @@ defmodule Mcpex.Server do
 
   @impl true
   def init(opts) do
-    server_info = Keyword.get(opts, :server_info, %{
-      name: "mcpex",
-      version: "1.0.0"
-    })
-    
+    server_info =
+      Keyword.get(opts, :server_info, %{
+        name: "mcpex",
+        version: "1.0.0"
+      })
+
     capabilities = Keyword.get(opts, :capabilities, %{})
-    
+
     state = %{
       server_info: server_info,
       capabilities: capabilities,
       sessions: %{},
       initialized_sessions: MapSet.new()
     }
-    
+
     {:ok, state}
   end
 
@@ -95,7 +96,7 @@ defmodule Mcpex.Server do
     case JsonRpc.parse(message) do
       {:ok, parsed_message} ->
         handle_parsed_message(parsed_message, session_id, state)
-      
+
       {:error, error} ->
         Logger.error("Failed to parse JSON-RPC message: #{inspect(error)}")
         {:reply, {:error, error}, state}
@@ -105,11 +106,11 @@ defmodule Mcpex.Server do
   @impl true
   def handle_cast({:notify, method, params, session_id}, state) do
     notification = JsonRpc.notification(method, params)
-    
+
     # Here you would send the notification to the client
     # This depends on your transport implementation
     Logger.info("Sending notification to session #{session_id}: #{inspect(notification)}")
-    
+
     {:noreply, state}
   end
 
@@ -120,7 +121,7 @@ defmodule Mcpex.Server do
     case method do
       "initialize" ->
         handle_initialize(request, session_id, state)
-      
+
       other_method when is_binary(other_method) ->
         if is_session_initialized?(session_id, state) do
           route_request(request, session_id, state)
@@ -129,7 +130,7 @@ defmodule Mcpex.Server do
           response = JsonRpc.error_response(request["id"], error)
           {:reply, {:ok, response}, state}
         end
-      
+
       _ ->
         error = Errors.method_not_found()
         response = JsonRpc.error_response(request["id"], error)
@@ -141,40 +142,41 @@ defmodule Mcpex.Server do
     # Process initialization request
     client_info = Map.get(params, "clientInfo", %{})
     client_capabilities = Map.get(params, "capabilities", %{})
-    
+
     # Determine which capabilities to advertise based on client capabilities
     # and registered capabilities in the registry
     advertised_capabilities = get_advertised_capabilities(client_capabilities)
-    
+
     # Create response with server info and capabilities
     response_params = %{
       "serverInfo" => state.server_info,
       "capabilities" => advertised_capabilities
     }
-    
+
     response = JsonRpc.response(id, response_params)
-    
+
     # Update state with new session
-    new_sessions = Map.put(state.sessions, session_id, %{
-      client_info: client_info,
-      client_capabilities: client_capabilities,
-      server_capabilities: advertised_capabilities
-    })
-    
+    new_sessions =
+      Map.put(state.sessions, session_id, %{
+        client_info: client_info,
+        client_capabilities: client_capabilities,
+        server_capabilities: advertised_capabilities
+      })
+
     # Mark session as initialized
     new_initialized_sessions = MapSet.put(state.initialized_sessions, session_id)
-    
+
     new_state = %{
-      state | 
-      sessions: new_sessions,
-      initialized_sessions: new_initialized_sessions
+      state
+      | sessions: new_sessions,
+        initialized_sessions: new_initialized_sessions
     }
-    
+
     # Send initialized notification
     # This would typically be done by the transport layer
     _initialized_notification = JsonRpc.notification("initialized", %{})
     Logger.info("Sending initialized notification to session #{session_id}")
-    
+
     {:reply, {:ok, response}, new_state}
   end
 
@@ -188,7 +190,7 @@ defmodule Mcpex.Server do
             {:ok, result} ->
               response = JsonRpc.response(id, result)
               {:reply, {:ok, response}, state}
-            
+
             {:error, error} ->
               response = JsonRpc.error_response(id, error)
               {:reply, {:ok, response}, state}
@@ -200,7 +202,7 @@ defmodule Mcpex.Server do
             response = JsonRpc.error_response(id, error)
             {:reply, {:ok, response}, state}
         end
-      
+
       {:error, :not_found} ->
         error = Errors.method_not_found()
         response = JsonRpc.error_response(id, error)
@@ -215,9 +217,11 @@ defmodule Mcpex.Server do
   defp get_advertised_capabilities(client_capabilities) do
     # Get all registered capabilities from the registry
     registered_capabilities = Mcpex.Registry.list_capabilities()
-    
+
     # Filter and transform capabilities based on client capabilities
-    Enum.reduce(registered_capabilities, %{}, fn {capability_name, %{module: module, config: config}}, acc ->
+    Enum.reduce(registered_capabilities, %{}, fn {capability_name,
+                                                  %{module: module, config: config}},
+                                                 acc ->
       if module.supports?(client_capabilities) do
         Map.put(acc, capability_name, module.get_server_capabilities(config))
       else
@@ -229,7 +233,7 @@ defmodule Mcpex.Server do
   defp get_handler_for_method(method) do
     # Map method to capability and look up in registry
     {capability, _specific_method} = parse_method(method)
-    
+
     case Mcpex.Registry.lookup(capability) do
       {:ok, {_pid, %{module: module}}} -> {:ok, module}
       {:error, :not_found} -> {:error, :not_found}
