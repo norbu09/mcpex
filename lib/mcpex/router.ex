@@ -63,20 +63,20 @@ defmodule Mcpex.Router do
 
   # SSE transport endpoints
   post "/mcp/sse" do
-    SSE.call(conn, [])
+    SSE.call(conn, SSE.init([]))
   end
 
   get "/mcp/sse/stream" do
-    SSE.handle_stream(conn)
+    SSE.call(conn, SSE.init(action: :sse_stream))
   end
 
   # Streamable HTTP transport endpoints
   post "/mcp" do
-    StreamableHttp.call(conn, [])
+    StreamableHttp.call(conn, StreamableHttp.init([]))
   end
 
   get "/mcp/stream" do
-    StreamableHttp.handle_stream(conn)
+    StreamableHttp.call(conn, StreamableHttp.init(action: :sse_stream))
   end
 
   # CORS preflight
